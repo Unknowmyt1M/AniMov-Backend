@@ -1,0 +1,538 @@
+{
+  "slug": "lord-of-mysteries",
+  "url": "https://animecube.live/anime/lord-of-mysteries",
+  "title": "Lord of Mysteries",
+  "aliases": [],
+  "status": "season-completed",
+  "year": 2025,
+  "total_episodes": 16,
+  "genres": [
+    "Supernatural Fantasy",
+    "Action",
+    "Adventure"
+  ],
+  "tags": [],
+  "synopsis": "The story begins in the year 1349 of the Epoch Calendar. Zhou Mingrui, a Chinese youth transmigrates into the body of a university graduate, Klein Moretti, after the latter's questionable suicide.\nFinding himself in a world reminiscent of late Victoria era England with mystical powers, Zhou Mingrui (now Klein Moretti) searches for a way to go home. After reproducing a ritual that presumably was the catalyst of his transmigration, he masquerades as a god-like entity and forms an organization known as the 'Tarot Club'. After becoming an official Beyonder (Those with supernatural abilities), he tries to find out what happened with Klein's suicide while growing his power to eventually return home.",
+  "cover_image": "https://images.animecube.live/assets/images/donghua/series/lord-of-mysteries/posters/lord-of-mysteries.jpg",
+  "update_days": [],
+  "update_time": "02:00",
+  "extra_meta": {
+    "title": "Lord of Mysteries",
+    "aliases": [],
+    "description": "The story begins in the year 1349 of the Epoch Calendar. Zhou Mingrui, a Chinese youth transmigrates into the body of a university graduate, Klein Moretti, after the latter's questionable suicide.\nFinding himself in a world reminiscent of late Victoria era England with mystical powers, Zhou Mingrui (now Klein Moretti) searches for a way to go home. After reproducing a ritual that presumably was the catalyst of his transmigration, he masquerades as a god-like entity and forms an organization known as the 'Tarot Club'. After becoming an official Beyonder (Those with supernatural abilities), he tries to find out what happened with Klein's suicide while growing his power to eventually return home.",
+    "coverImage": "https://images.animecube.live/assets/images/donghua/series/lord-of-mysteries/posters/lord-of-mysteries.jpg",
+    "genres": [
+      "Supernatural Fantasy",
+      "Action",
+      "Adventure"
+    ],
+    "tags": [],
+    "status": "season-completed",
+    "year": 2025,
+    "totalEpisodes": 16,
+    "primaryTabs": [
+      {
+        "id": "primary-1",
+        "number": 1,
+        "title": "",
+        "customName": "",
+        "type": "series",
+        "year": 2025,
+        "seasons": [
+          {
+            "id": "tab-1",
+            "number": 1,
+            "title": "Season 1",
+            "customName": "Season 1",
+            "year": 2025,
+            "rating": 9.5,
+            "episodes": [
+              {
+                "id": "lord-of-mysteries-tab-1-ep-1",
+                "number": 1,
+                "numberDisplay": "1",
+                "title": "Episode 1",
+                "description": "",
+                "duration": 24,
+                "publishedAt": "2025-08-21T10:32:25.063Z"
+              },
+              {
+                "id": "lord-of-mysteries-tab-1-ep-2",
+                "number": 2,
+                "numberDisplay": "2",
+                "title": "Episode 2",
+                "description": "",
+                "duration": 24,
+                "publishedAt": "2025-08-21T10:32:25.063Z"
+              },
+              {
+                "id": "lord-of-mysteries-tab-1-ep-3",
+                "number": 3,
+                "numberDisplay": "3",
+                "title": "Episode 3",
+                "description": "",
+                "duration": 24,
+                "publishedAt": "2025-08-21T10:32:25.063Z"
+              },
+              {
+                "id": "lord-of-mysteries-tab-1-ep-4",
+                "number": 4,
+                "numberDisplay": "4",
+                "title": "Episode 4",
+                "description": "",
+                "duration": 24,
+                "publishedAt": "2025-08-21T10:32:25.063Z"
+              },
+              {
+                "id": "lord-of-mysteries-tab-1-ep-5",
+                "number": 5,
+                "numberDisplay": "5",
+                "title": "Episode 5",
+                "description": "",
+                "duration": 24,
+                "publishedAt": "2025-08-21T10:32:25.063Z"
+              },
+              {
+                "id": "lord-of-mysteries-tab-1-ep-6",
+                "number": 6,
+                "numberDisplay": "6",
+                "title": "Episode 6",
+                "description": "",
+                "duration": 24,
+                "publishedAt": "2025-08-21T10:32:25.063Z"
+              },
+              {
+                "id": "lord-of-mysteries-tab-1-ep-7",
+                "number": 7,
+                "numberDisplay": "7",
+                "title": "Episode 7",
+                "description": "",
+                "duration": 24,
+                "publishedAt": "2025-08-21T10:32:25.063Z"
+              },
+              {
+                "id": "lord-of-mysteries-tab-1-ep-8",
+                "number": 8,
+                "numberDisplay": "8",
+                "title": "Episode 8",
+                "description": "",
+                "duration": 24,
+                "publishedAt": "2025-08-21T10:32:25.063Z"
+              },
+              {
+                "id": "lord-of-mysteries-tab-1-ep-9",
+                "number": 9,
+                "numberDisplay": "9",
+                "title": "Episode 9",
+                "description": "",
+                "duration": 24,
+                "publishedAt": "2025-08-21T10:32:25.063Z"
+              },
+              {
+                "id": "lord-of-mysteries-tab-1-ep-10",
+                "number": 10,
+                "numberDisplay": "10",
+                "title": "Episode 10",
+                "description": "",
+                "duration": 24,
+                "publishedAt": "2025-08-21T10:32:25.063Z"
+              },
+              {
+                "id": "lord-of-mysteries-tab-1-ep-11",
+                "number": 11,
+                "numberDisplay": "11",
+                "title": "Episode 11",
+                "description": "",
+                "duration": 24,
+                "publishedAt": "2025-08-21T10:32:25.063Z"
+              },
+              {
+                "id": "lord-of-mysteries-tab-1-ep-12",
+                "number": 12,
+                "numberDisplay": "12",
+                "title": "Episode 12",
+                "description": "",
+                "duration": 24,
+                "publishedAt": "2025-08-21T10:32:25.063Z"
+              },
+              {
+                "id": "lord-of-mysteries-tab-1-ep-13",
+                "number": 13,
+                "numberDisplay": "13",
+                "title": "Episode 13",
+                "description": "",
+                "duration": 24,
+                "publishedAt": "2025-08-21T10:32:25.063Z"
+              }
+            ]
+          },
+          {
+            "id": "tab-1781922140795",
+            "number": 2,
+            "title": "Special",
+            "customName": "Special",
+            "year": 2025,
+            "episodes": [
+              {
+                "id": "lord-of-mysteries-tab-1781922140795-ep-1",
+                "number": 1,
+                "numberDisplay": "1",
+                "title": "City of Silver",
+                "description": "",
+                "duration": 24,
+                "publishedAt": "2026-06-20T02:33:03.727Z"
+              },
+              {
+                "id": "lord-of-mysteries-tab-1781922140795-ep-2",
+                "number": 2,
+                "numberDisplay": "2",
+                "title": "The Prey Part 1",
+                "description": "",
+                "duration": 24,
+                "publishedAt": "2026-06-27T02:47:11.124Z"
+              },
+              {
+                "id": "lord-of-mysteries-tab-1781922140795-ep-3",
+                "number": 3,
+                "numberDisplay": "3",
+                "title": "The Prey Part 2",
+                "description": "",
+                "duration": 24,
+                "publishedAt": "2026-06-28T02:45:06.040Z"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "updateDays": [],
+    "updateTime": "02:00",
+    "slug": "lord-of-mysteries",
+    "keywords": [
+      "Lord of Mysteries",
+      "Supernatural Fantasy",
+      "Action",
+      "Adventure"
+    ],
+    "id": "anime-1751658074332",
+    "createdAt": "2025-07-04T19:41:14.332Z",
+    "updatedAt": "2026-07-24T17:47:28.582Z",
+    "latestQuality": "4K",
+    "latestGoodSub": true,
+    "homeSort": "rating_desc",
+    "lastEpisodeAddedAt": "2026-06-28T02:45:06.041Z",
+    "releasePreview": null
+  },
+  "created_at": "2026-09-29 17:14:27",
+  "updated_at": "2026-09-29 17:15:34",
+  "episodes": [
+    {
+      "id": "lord-of-mysteries-tab-1-ep-1",
+      "url": "https://animecube.live/anime/lord-of-mysteries?season=tab-1&episode=lord-of-mysteries-tab-1-ep-1",
+      "series_slug": "lord-of-mysteries",
+      "episode_number": 1.0,
+      "title": "Episode 1",
+      "season_id": "tab-1",
+      "duration": 24,
+      "published_at": "2025-08-21T10:32:25.063Z",
+      "prev_episode": null,
+      "next_episode": "https://animecube.live/anime/lord-of-mysteries?season=tab-1781922140795&episode=lord-of-mysteries-tab-1781922140795-ep-1",
+      "status": "completed",
+      "created_at": "2026-09-29 17:14:27",
+      "updated_at": "2026-09-29 17:15:39",
+      "servers": [
+        {
+          "server_name": "Dailymotion [4K]",
+          "provider": "dailymotion",
+          "embed_url": "https://geo.dailymotion.com/player.html?video=x9nm6ji",
+          "quality": "4K",
+          "languages": [
+            "Multi-Sub",
+            "English"
+          ]
+        },
+        {
+          "server_name": "Rumble [4K]",
+          "provider": "rumble",
+          "embed_url": "https://rumble.com/embed/v6tiqez/",
+          "quality": "4K",
+          "languages": [
+            "Multi-Sub",
+            "English"
+          ]
+        },
+        {
+          "server_name": "AnimeCube Web Player",
+          "provider": "animecube",
+          "embed_url": "https://animecube.live/anime/lord-of-mysteries?season=tab-1&episode=lord-of-mysteries-tab-1-ep-1",
+          "quality": "1080p / 4K",
+          "languages": [
+            "Multi-Sub",
+            "English"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "lord-of-mysteries-tab-1781922140795-ep-1",
+      "url": "https://animecube.live/anime/lord-of-mysteries?season=tab-1781922140795&episode=lord-of-mysteries-tab-1781922140795-ep-1",
+      "series_slug": "lord-of-mysteries",
+      "episode_number": 1.0,
+      "title": "City of Silver",
+      "season_id": "tab-1781922140795",
+      "duration": 24,
+      "published_at": "2026-06-20T02:33:03.727Z",
+      "prev_episode": "https://animecube.live/anime/lord-of-mysteries?season=tab-1&episode=lord-of-mysteries-tab-1-ep-1",
+      "next_episode": "https://animecube.live/anime/lord-of-mysteries?season=tab-1&episode=lord-of-mysteries-tab-1-ep-2",
+      "status": "completed",
+      "created_at": "2026-09-29 17:14:27",
+      "updated_at": "2026-09-29 17:15:41",
+      "servers": [
+        {
+          "server_name": "Dailymotion [4K]",
+          "provider": "dailymotion",
+          "embed_url": "https://geo.dailymotion.com/player.html?video=xarv7ry",
+          "quality": "4K",
+          "languages": [
+            "Multi-Sub",
+            "English"
+          ]
+        },
+        {
+          "server_name": "AnimeCube Web Player",
+          "provider": "animecube",
+          "embed_url": "https://animecube.live/anime/lord-of-mysteries?season=tab-1781922140795&episode=lord-of-mysteries-tab-1781922140795-ep-1",
+          "quality": "1080p / 4K",
+          "languages": [
+            "Multi-Sub",
+            "English"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "lord-of-mysteries-tab-1-ep-2",
+      "url": "https://animecube.live/anime/lord-of-mysteries?season=tab-1&episode=lord-of-mysteries-tab-1-ep-2",
+      "series_slug": "lord-of-mysteries",
+      "episode_number": 2.0,
+      "title": "Episode 2",
+      "season_id": "tab-1",
+      "duration": 24,
+      "published_at": "2025-08-21T10:32:25.063Z",
+      "prev_episode": null,
+      "next_episode": null,
+      "status": "pending",
+      "created_at": "2026-09-29 17:14:27",
+      "updated_at": "2026-09-29 17:14:27",
+      "servers": []
+    },
+    {
+      "id": "lord-of-mysteries-tab-1781922140795-ep-2",
+      "url": "https://animecube.live/anime/lord-of-mysteries?season=tab-1781922140795&episode=lord-of-mysteries-tab-1781922140795-ep-2",
+      "series_slug": "lord-of-mysteries",
+      "episode_number": 2.0,
+      "title": "The Prey Part 1",
+      "season_id": "tab-1781922140795",
+      "duration": 24,
+      "published_at": "2026-06-27T02:47:11.124Z",
+      "prev_episode": null,
+      "next_episode": null,
+      "status": "pending",
+      "created_at": "2026-09-29 17:14:27",
+      "updated_at": "2026-09-29 17:14:27",
+      "servers": []
+    },
+    {
+      "id": "lord-of-mysteries-tab-1-ep-3",
+      "url": "https://animecube.live/anime/lord-of-mysteries?season=tab-1&episode=lord-of-mysteries-tab-1-ep-3",
+      "series_slug": "lord-of-mysteries",
+      "episode_number": 3.0,
+      "title": "Episode 3",
+      "season_id": "tab-1",
+      "duration": 24,
+      "published_at": "2025-08-21T10:32:25.063Z",
+      "prev_episode": null,
+      "next_episode": null,
+      "status": "pending",
+      "created_at": "2026-09-29 17:14:27",
+      "updated_at": "2026-09-29 17:14:27",
+      "servers": []
+    },
+    {
+      "id": "lord-of-mysteries-tab-1781922140795-ep-3",
+      "url": "https://animecube.live/anime/lord-of-mysteries?season=tab-1781922140795&episode=lord-of-mysteries-tab-1781922140795-ep-3",
+      "series_slug": "lord-of-mysteries",
+      "episode_number": 3.0,
+      "title": "The Prey Part 2",
+      "season_id": "tab-1781922140795",
+      "duration": 24,
+      "published_at": "2026-06-28T02:45:06.040Z",
+      "prev_episode": null,
+      "next_episode": null,
+      "status": "pending",
+      "created_at": "2026-09-29 17:14:27",
+      "updated_at": "2026-09-29 17:14:27",
+      "servers": []
+    },
+    {
+      "id": "lord-of-mysteries-tab-1-ep-4",
+      "url": "https://animecube.live/anime/lord-of-mysteries?season=tab-1&episode=lord-of-mysteries-tab-1-ep-4",
+      "series_slug": "lord-of-mysteries",
+      "episode_number": 4.0,
+      "title": "Episode 4",
+      "season_id": "tab-1",
+      "duration": 24,
+      "published_at": "2025-08-21T10:32:25.063Z",
+      "prev_episode": null,
+      "next_episode": null,
+      "status": "pending",
+      "created_at": "2026-09-29 17:14:27",
+      "updated_at": "2026-09-29 17:14:27",
+      "servers": []
+    },
+    {
+      "id": "lord-of-mysteries-tab-1-ep-5",
+      "url": "https://animecube.live/anime/lord-of-mysteries?season=tab-1&episode=lord-of-mysteries-tab-1-ep-5",
+      "series_slug": "lord-of-mysteries",
+      "episode_number": 5.0,
+      "title": "Episode 5",
+      "season_id": "tab-1",
+      "duration": 24,
+      "published_at": "2025-08-21T10:32:25.063Z",
+      "prev_episode": null,
+      "next_episode": null,
+      "status": "pending",
+      "created_at": "2026-09-29 17:14:27",
+      "updated_at": "2026-09-29 17:14:27",
+      "servers": []
+    },
+    {
+      "id": "lord-of-mysteries-tab-1-ep-6",
+      "url": "https://animecube.live/anime/lord-of-mysteries?season=tab-1&episode=lord-of-mysteries-tab-1-ep-6",
+      "series_slug": "lord-of-mysteries",
+      "episode_number": 6.0,
+      "title": "Episode 6",
+      "season_id": "tab-1",
+      "duration": 24,
+      "published_at": "2025-08-21T10:32:25.063Z",
+      "prev_episode": null,
+      "next_episode": null,
+      "status": "pending",
+      "created_at": "2026-09-29 17:14:27",
+      "updated_at": "2026-09-29 17:14:27",
+      "servers": []
+    },
+    {
+      "id": "lord-of-mysteries-tab-1-ep-7",
+      "url": "https://animecube.live/anime/lord-of-mysteries?season=tab-1&episode=lord-of-mysteries-tab-1-ep-7",
+      "series_slug": "lord-of-mysteries",
+      "episode_number": 7.0,
+      "title": "Episode 7",
+      "season_id": "tab-1",
+      "duration": 24,
+      "published_at": "2025-08-21T10:32:25.063Z",
+      "prev_episode": null,
+      "next_episode": null,
+      "status": "pending",
+      "created_at": "2026-09-29 17:14:27",
+      "updated_at": "2026-09-29 17:14:27",
+      "servers": []
+    },
+    {
+      "id": "lord-of-mysteries-tab-1-ep-8",
+      "url": "https://animecube.live/anime/lord-of-mysteries?season=tab-1&episode=lord-of-mysteries-tab-1-ep-8",
+      "series_slug": "lord-of-mysteries",
+      "episode_number": 8.0,
+      "title": "Episode 8",
+      "season_id": "tab-1",
+      "duration": 24,
+      "published_at": "2025-08-21T10:32:25.063Z",
+      "prev_episode": null,
+      "next_episode": null,
+      "status": "pending",
+      "created_at": "2026-09-29 17:14:27",
+      "updated_at": "2026-09-29 17:14:27",
+      "servers": []
+    },
+    {
+      "id": "lord-of-mysteries-tab-1-ep-9",
+      "url": "https://animecube.live/anime/lord-of-mysteries?season=tab-1&episode=lord-of-mysteries-tab-1-ep-9",
+      "series_slug": "lord-of-mysteries",
+      "episode_number": 9.0,
+      "title": "Episode 9",
+      "season_id": "tab-1",
+      "duration": 24,
+      "published_at": "2025-08-21T10:32:25.063Z",
+      "prev_episode": null,
+      "next_episode": null,
+      "status": "pending",
+      "created_at": "2026-09-29 17:14:27",
+      "updated_at": "2026-09-29 17:14:27",
+      "servers": []
+    },
+    {
+      "id": "lord-of-mysteries-tab-1-ep-10",
+      "url": "https://animecube.live/anime/lord-of-mysteries?season=tab-1&episode=lord-of-mysteries-tab-1-ep-10",
+      "series_slug": "lord-of-mysteries",
+      "episode_number": 10.0,
+      "title": "Episode 10",
+      "season_id": "tab-1",
+      "duration": 24,
+      "published_at": "2025-08-21T10:32:25.063Z",
+      "prev_episode": null,
+      "next_episode": null,
+      "status": "pending",
+      "created_at": "2026-09-29 17:14:27",
+      "updated_at": "2026-09-29 17:14:27",
+      "servers": []
+    },
+    {
+      "id": "lord-of-mysteries-tab-1-ep-11",
+      "url": "https://animecube.live/anime/lord-of-mysteries?season=tab-1&episode=lord-of-mysteries-tab-1-ep-11",
+      "series_slug": "lord-of-mysteries",
+      "episode_number": 11.0,
+      "title": "Episode 11",
+      "season_id": "tab-1",
+      "duration": 24,
+      "published_at": "2025-08-21T10:32:25.063Z",
+      "prev_episode": null,
+      "next_episode": null,
+      "status": "pending",
+      "created_at": "2026-09-29 17:14:27",
+      "updated_at": "2026-09-29 17:14:27",
+      "servers": []
+    },
+    {
+      "id": "lord-of-mysteries-tab-1-ep-12",
+      "url": "https://animecube.live/anime/lord-of-mysteries?season=tab-1&episode=lord-of-mysteries-tab-1-ep-12",
+      "series_slug": "lord-of-mysteries",
+      "episode_number": 12.0,
+      "title": "Episode 12",
+      "season_id": "tab-1",
+      "duration": 24,
+      "published_at": "2025-08-21T10:32:25.063Z",
+      "prev_episode": null,
+      "next_episode": null,
+      "status": "pending",
+      "created_at": "2026-09-29 17:14:27",
+      "updated_at": "2026-09-29 17:14:27",
+      "servers": []
+    },
+    {
+      "id": "lord-of-mysteries-tab-1-ep-13",
+      "url": "https://animecube.live/anime/lord-of-mysteries?season=tab-1&episode=lord-of-mysteries-tab-1-ep-13",
+      "series_slug": "lord-of-mysteries",
+      "episode_number": 13.0,
+      "title": "Episode 13",
+      "season_id": "tab-1",
+      "duration": 24,
+      "published_at": "2025-08-21T10:32:25.063Z",
+      "prev_episode": null,
+      "next_episode": null,
+      "status": "pending",
+      "created_at": "2026-09-29 17:14:27",
+      "updated_at": "2026-09-29 17:14:27",
+      "servers": []
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "source": "https://animexin.dev/",
+  "mirror_domains": [
+    "https://animexin.dev",
+    "https://animexin.vip",
+    "https://animexin.xyz"
+  ],
+  "max_anime": 5,
+  "max_episodes_per_anime": 2,
+  "max_servers_per_episode": null,
+  "concurrency": 6,
+  "request_delay": 0.0,
+  "timeout": 45.0,
+  "retries": 3,
+  "db_path": "animexin.db",
+  "output_dir": "output",
+  "html_cache_dir": "cache",
+  "cache_enabled": true,
+  "use_browser_fallback": true,
+  "headless": true,
+  "log_level": "INFO"
+}

@@ -1,0 +1,37 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Pytest / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Local databases & WAL files
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+
+# Cache directories
+cache/
+.cache/
+
+# Scraper local runtime artifacts
+output/*.json
+
+# Environments
+.venv/
+env/
+venv/
+ENV/
+
+# Scratch & Dev
+scratch/
+phisher_repo/
+
+# OS files
+.DS_Store
+Thumbs.db

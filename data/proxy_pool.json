@@ -1,0 +1,20 @@
+{
+  "updated_at": 1790767470.8369782,
+  "count": 2,
+  "proxies": [
+    {
+      "proxy": "http://43.99.60.244:8089",
+      "https_ok": true,
+      "target_ok": true,
+      "target_passed": "www.1tube.org",
+      "latency_ms": 620
+    },
+    {
+      "proxy": "http://27.18.219.42:10808",
+      "https_ok": true,
+      "target_ok": true,
+      "target_passed": "www.1tube.org",
+      "latency_ms": 2306
+    }
+  ]
+}
