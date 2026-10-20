@@ -1,7 +1,8 @@
 """Core Scraper and API Client for Anikage Anime."""
 
 import logging
-from typing import List, Optional, Dict, Any
+import time
+from typing import List, Optional, Dict, Any, Tuple
 
 from .http_client import AnikageHttpClient
 from .config import API_BASE_URL
@@ -21,6 +22,7 @@ class AnikageScraper:
 
     def __init__(self, http_client: Optional[AnikageHttpClient] = None):
         self.http = http_client or AnikageHttpClient()
+        self._detail_cache: Dict[str, Tuple[float, AnikageDetail]] = {}
 
     def _parse_search_item(self, item: Dict[str, Any]) -> AnikageSearchResult:
         slug = item.get("slug", "")
@@ -99,6 +101,13 @@ class AnikageScraper:
 
     def get_detail(self, slug: str, include_episodes: bool = True) -> AnikageDetail:
         """Fetch anime details and episode catalog."""
+        cache_key = f"{slug}:{include_episodes}"
+        now = time.time()
+        if cache_key in self._detail_cache:
+            ts, cached_detail = self._detail_cache[cache_key]
+            if now - ts < 1800:  # 30 mins TTL
+                return cached_detail
+
         url = f"{API_BASE_URL}/{slug}"
         resp = self.http.get(url)
         data = resp.json()
@@ -138,7 +147,7 @@ class AnikageScraper:
             except Exception as e:
                 logger.warning(f"Failed to fetch episodes for {slug}: {e}")
 
-        return AnikageDetail(
+        detail = AnikageDetail(
             slug=slug,
             romaji=romaji,
             english=english,
@@ -155,6 +164,8 @@ class AnikageScraper:
             total_episodes=total_episodes,
             episodes=episodes,
         )
+        self._detail_cache[cache_key] = (now, detail)
+        return detail
 
     def get_episodes(self, slug: str) -> List[AnikageEpisode]:
         """Fetch all available episodes for an anime."""

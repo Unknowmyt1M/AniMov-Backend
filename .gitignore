@@ -32,6 +32,13 @@ ENV/
 scratch/
 phisher_repo/
 
+# Frontend (Node / Vite)
+node_modules/
+dist/
+dist-ssr/
+*.local
+.npm/
+
 # OS files
 .DS_Store
 Thumbs.db
