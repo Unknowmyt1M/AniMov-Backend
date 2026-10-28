@@ -6,95 +6,206 @@ from pathlib import Path
 from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel
+from rich.text import Text
+from rich.align import Align
+from rich import box
 
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 if hasattr(sys.stderr, "reconfigure"):
     sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
+from typing import Optional
 from .scraper import WatchAnimeWorldScraper
 from .storage import WatchAnimeWorldStorage
 
 console = Console()
 
+BANNER_ART = r"""
+    ___          _ __  ___          
+   /   |  ____  (_)  |/  /___  _  __
+  / /| | / __ \/ / /|_/ / __ \| |/ /
+ / ___ |/ / / / / /  / / /_/ /|   / 
+/_/  |_/_/ /_/_/_/  /_/\____/ |_/  
+"""
+
+
+def print_banner():
+    logo = Text(BANNER_ART, style="bold bright_cyan")
+    tagline = Text("⚡ WATCHANIMEWORLD ⚡  |  India Regional Dubs & Multi-Audio Engine", style="bold bright_yellow")
+    panel = Panel(
+        Align.center(Text.assemble(logo, "\n", tagline)),
+        border_style="bright_magenta",
+        box=box.ROUNDED,
+        padding=(0, 2),
+    )
+    console.print(panel)
+
 
 def print_search_results(results):
     if not results:
-        console.print("[yellow]No anime found matching your query.[/yellow]")
+        console.print("\n[yellow]⚠️  No anime found matching your query.[/yellow]\n")
         return
 
-    table = Table(title=f"WatchAnimeWorld Search Results ({len(results)})", header_style="bold magenta")
+    table = Table(
+        title=f"✨ WatchAnimeWorld Search Results ({len(results)}) ✨",
+        header_style="bold bright_magenta",
+        border_style="bright_blue",
+        box=box.ROUNDED,
+        show_lines=True,
+    )
     table.add_column("Slug", style="cyan", no_wrap=False, overflow="fold")
-    table.add_column("Title", style="bold white")
-    table.add_column("Type", style="green")
-    table.add_column("Episodes", style="yellow")
-    table.add_column("Duration", style="blue")
+    table.add_column("Title", style="bold bright_white")
+    table.add_column("Type", style="bright_green", justify="center")
+    table.add_column("Episodes", style="bright_yellow", justify="center")
+    table.add_column("Duration", style="bright_blue", justify="center")
 
     for r in results:
+        media_badge = f"[bold on dark_magenta] {r.media_type} [/]" if "Movie" in r.media_type else f"[bold on dark_blue] {r.media_type} [/]"
         table.add_row(
             r.slug,
             r.title,
-            r.media_type,
+            media_badge,
             r.episodes or "N/A",
             r.duration or "N/A",
         )
     console.print(table)
 
 
-def print_series_detail(detail):
+def print_series_detail(
+    detail,
+    season: Optional[int] = None,
+    show_all: bool = False,
+    limit: int = 25,
+):
     if not detail:
-        console.print("[red]Could not retrieve series details.[/red]")
+        console.print("\n[red]❌ Could not retrieve series details.[/red]\n")
         return
 
-    info = f"""[bold cyan]Title:[/bold cyan] {detail.title}
-[bold cyan]Slug:[/bold cyan] {detail.slug}
-[bold cyan]Genres:[/bold cyan] {', '.join(detail.genres) if detail.genres else 'N/A'}
-[bold cyan]Total Episodes:[/bold cyan] {detail.total_episodes}
-[bold cyan]Synopsis:[/bold cyan] {detail.synopsis[:200] + '...' if detail.synopsis else 'N/A'}
+    seasons_str = ", ".join(str(s) for s in detail.seasons) if detail.seasons else "1"
+    lang_badges = " ".join(f"[bold black on bright_cyan] {l} [/]" for l in detail.languages) if getattr(detail, "languages", None) else "[dim]N/A[/dim]"
+    genre_str = " • ".join(f"[bold bright_magenta]{g}[/]" for g in detail.genres) if detail.genres else "[dim]N/A[/dim]"
+
+    card_content = f"""[bold bright_white]🎬 Title:[/bold bright_white]         [bold bright_yellow]{detail.title}[/bold bright_yellow]
+[bold bright_white]🔖 Slug:[/bold bright_white]          [cyan]{detail.slug}[/cyan]
+[bold bright_white]📅 Release Year:[/bold bright_white]  [bright_green]{getattr(detail, 'year', None) or 'N/A'}[/bright_green]
+[bold bright_white]⏱️  Duration:[/bold bright_white]      [bright_blue]{getattr(detail, 'duration', None) or 'N/A'}[/bright_blue]
+[bold bright_white]🌐 Languages:[/bold bright_white]     {lang_badges}
+[bold bright_white]🎭 Genres:[/bold bright_white]        {genre_str}
+[bold bright_white]📦 Total Seasons:[/bold bright_white] [bold bright_yellow]{detail.total_seasons or len(detail.seasons) or 1} Seasons[/bold bright_yellow] [dim]({seasons_str})[/dim]
+[bold bright_white]🎞️  Episodes:[/bold bright_white]      [bold bright_cyan]{detail.total_episodes} Episodes Total[/bold bright_cyan]
+
+[bold bright_white]📖 Synopsis:[/bold bright_white]
+[italic white]{detail.synopsis if detail.synopsis else 'N/A'}[/italic white]
 """
-    console.print(Panel(info, title=f"WatchAnimeWorld Series: {detail.title}", border_style="cyan"))
+    console.print(
+        Panel(
+            card_content.strip(),
+            title=f"[bold bright_cyan]✦ {detail.title.upper()} ✦[/bold bright_cyan]",
+            border_style="bright_cyan",
+            box=box.ROUNDED,
+            padding=(1, 2),
+        )
+    )
 
     if detail.episodes:
-        table = Table(title=f"Episodes ({len(detail.episodes)})", header_style="bold cyan")
-        table.add_column("Season", style="yellow")
-        table.add_column("Ep #", style="yellow")
-        table.add_column("Slug", style="cyan", no_wrap=False, overflow="fold")
-        table.add_column("Title", style="white")
+        episodes_to_display = detail.episodes
+        if season is not None:
+            episodes_to_display = [ep for ep in detail.episodes if ep.season_num == season]
+            if not episodes_to_display:
+                console.print(f"[yellow]⚠️  No episodes found for Season {season}. Available seasons: {seasons_str}[/yellow]")
+                return
 
-        for ep in detail.episodes[:25]:
-            table.add_row(
-                str(ep.season_num),
-                str(ep.episode_num),
-                ep.slug,
-                ep.title,
-            )
-        if len(detail.episodes) > 25:
-            table.add_row("...", "...", "...", f"(+ {len(detail.episodes) - 25} more)")
+        table_title = f"📺 Episodes ({len(episodes_to_display)})"
+        if season is not None:
+            table_title = f"📺 Season {season} Episodes ({len(episodes_to_display)})"
+
+        table = Table(
+            title=table_title,
+            header_style="bold bright_cyan",
+            border_style="cyan",
+            box=box.ROUNDED,
+            show_lines=True,
+        )
+        table.add_column("Season", style="bold bright_yellow", justify="center", width=8)
+        table.add_column("Ep #", style="bold bright_green", justify="center", width=8)
+        table.add_column("Slug", style="cyan", no_wrap=False, overflow="fold")
+        table.add_column("Title", style="bold white")
+
+        if show_all or season is not None:
+            for ep in episodes_to_display:
+                table.add_row(
+                    str(ep.season_num),
+                    str(ep.episode_num),
+                    ep.slug,
+                    ep.title,
+                )
+        else:
+            display_count = min(limit, len(episodes_to_display))
+            for ep in episodes_to_display[:display_count]:
+                table.add_row(
+                    str(ep.season_num),
+                    str(ep.episode_num),
+                    ep.slug,
+                    ep.title,
+                )
+            if len(episodes_to_display) > display_count:
+                remaining = len(episodes_to_display) - display_count
+                table.add_row("...", "...", "...", f"(+ {remaining} more)")
+
         console.print(table)
+
+        if not show_all and season is None and len(episodes_to_display) > limit:
+            console.print(
+                f"[dim]💡 Tip: Showing first {limit} episodes. Use [bold white]--all[/bold white] to view all {len(detail.episodes)} episodes, or [bold white]--season <num>[/bold white] to view a specific season.[/dim]\n"
+            )
 
 
 def print_episode_streams(ep):
     if not ep:
-        console.print("[red]Could not retrieve episode streams.[/red]")
+        console.print("\n[red]❌ Could not retrieve episode streams.[/red]\n")
         return
 
-    content = f"""[bold cyan]Episode:[/bold cyan] Season {ep.season_num}, Episode {ep.episode_num}
-[bold cyan]Title:[/bold cyan] {ep.title}
+    audio = getattr(ep, "audio_type", None) or "Multi-Audio"
+    content = f"""[bold bright_white]📺 Episode:[/bold bright_white]     [bold bright_yellow]Season {ep.season_num}, Episode {ep.episode_num}[/bold bright_yellow]
+[bold bright_white]🎬 Title:[/bold bright_white]       [bold bright_white]{ep.title}[/bold bright_white]
+[bold bright_white]🔊 Audio Track:[/bold bright_white] [bold black on bright_yellow] {audio} [/]
+[bold bright_white]🔗 Direct Link:[/bold bright_white] [cyan]{ep.link}[/cyan]
 """
-    if ep.servers:
-        content += "\n[bold yellow]Available Servers / Embeds:[/bold yellow]\n"
-        for s in ep.servers:
-            content += f"  • [bold white]{s.name}:[/bold white] [underline cyan]{s.embed_url}[/underline cyan]\n"
-    else:
-        content += "\n[yellow]No parsed streaming servers found.[/yellow]\n"
+    console.print(
+        Panel(
+            content.strip(),
+            title=f"[bold bright_green]✦ {ep.slug.upper()} ✦[/bold bright_green]",
+            border_style="bright_green",
+            box=box.ROUNDED,
+            padding=(1, 2),
+        )
+    )
 
-    console.print(Panel(content, title=f"WatchAnimeWorld Episode: {ep.slug}", border_style="green"))
+    if ep.servers:
+        srv_table = Table(
+            title="🚀 Available Streaming Mirrors & Embeds",
+            header_style="bold bright_yellow",
+            border_style="bright_yellow",
+            box=box.ROUNDED,
+            show_lines=True,
+        )
+        srv_table.add_column("Server / Mirror", style="bold bright_cyan", width=22)
+        srv_table.add_column("Embed URL", style="underline bright_white")
+        for s in ep.servers:
+            srv_table.add_row(f"⚡ {s.name}", s.embed_url)
+        console.print(srv_table)
+    else:
+        console.print("[yellow]⚠️  No parsed streaming servers found.[/yellow]")
 
 
 def main():
     parser = argparse.ArgumentParser(description="WatchAnimeWorld Scraper CLI")
     parser.add_argument("--search", "-s", type=str, nargs="?", const="", default=None, help="Search anime by title")
     parser.add_argument("--detail", "-d", type=str, help="Get series detail by slug or URL")
+    parser.add_argument("--all", "-a", action="store_true", help="Display all episodes without truncating")
+    parser.add_argument("--season", "-sn", type=int, default=None, help="Filter episode display by season number")
+    parser.add_argument("--limit", "-l", type=int, default=25, help="Number of episodes to display (default: 25)")
     parser.add_argument("--episode", "-e", type=str, help="Episode slug or URL (e.g. the-elusive-samurai-2x1)")
     parser.add_argument("--crawl", "-c", type=str, help="Crawl series and pre-cache episodes")
     parser.add_argument("--max-episodes", type=int, default=None, help="Limit number of episodes to crawl")
@@ -106,32 +217,38 @@ def main():
     scraper = WatchAnimeWorldScraper()
     storage = WatchAnimeWorldStorage()
 
+    print_banner()
+
     try:
         if args.search is not None:
-            results = scraper.search(args.search)
+            with console.status(f"[bold bright_cyan]🔍 Searching anime catalog for '[bold white]{args.search}[/bold white]'...[/bold bright_cyan]", spinner="dots12"):
+                results = scraper.search(args.search)
             print_search_results(results)
             if not results:
                 sys.exit(1)
 
         elif args.detail:
-            detail = scraper.get_series_detail(args.detail, use_cache=not args.refresh)
+            with console.status(f"[bold bright_magenta]✨ Syncing series details & crawling all seasons for '[bold white]{args.detail}[/bold white]'...[/bold bright_magenta]", spinner="aesthetic"):
+                detail = scraper.get_series_detail(args.detail, use_cache=not args.refresh)
             if not detail:
-                console.print("[red]Could not retrieve series details.[/red]")
+                console.print("\n[red]❌ Could not retrieve series details.[/red]\n")
                 sys.exit(1)
-            print_series_detail(detail)
+            print_series_detail(detail, season=args.season, show_all=args.all, limit=args.limit)
 
         elif args.episode:
-            ep = scraper.get_episode_streams(args.episode, use_cache=not args.refresh)
+            with console.status(f"[bold bright_green]🚀 Resolving multi-audio streams & mirrors for '[bold white]{args.episode}[/bold white]'...[/bold bright_green]", spinner="arc"):
+                ep = scraper.get_episode_streams(args.episode, use_cache=not args.refresh)
             if not ep:
-                console.print("[red]Could not retrieve episode streams.[/red]")
+                console.print("\n[red]❌ Could not retrieve episode streams.[/red]\n")
                 sys.exit(1)
             print_episode_streams(ep)
 
         elif args.crawl:
-            detail = scraper.crawl_series(args.crawl, max_episodes=args.max_episodes)
+            with console.status(f"[bold bright_yellow]⚡ Crawling series episodes for '[bold white]{args.crawl}[/bold white]'...[/bold bright_yellow]", spinner="bouncingBar"):
+                detail = scraper.crawl_series(args.crawl, max_episodes=args.max_episodes)
             if not detail:
                 sys.exit(1)
-            print_series_detail(detail)
+            print_series_detail(detail, season=args.season, show_all=args.all, limit=args.limit)
 
         elif args.stats:
             stats = storage.get_stats()

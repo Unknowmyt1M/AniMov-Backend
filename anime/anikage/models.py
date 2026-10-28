@@ -47,6 +47,25 @@ class AnikageEpisode(BaseModel):
     description: Optional[str] = None
 
 
+class AnikageRelation(BaseModel):
+    """Verified series/franchise relation (prequel, sequel, spin-off, etc.)."""
+    slug: Optional[str] = None
+    title: str
+    format: Optional[str] = None
+    relation_type: str
+    cover_image: Optional[str] = None
+    banner_image: Optional[str] = None
+
+
+class AnikageRecommendation(BaseModel):
+    """Recommended anime series."""
+    slug: str
+    title: str
+    poster: Optional[str] = None
+    format: Optional[str] = None
+    score: Optional[float] = None
+
+
 class AnikageDetail(BaseModel):
     """Complete anime series detail."""
     slug: str
@@ -62,5 +81,9 @@ class AnikageDetail(BaseModel):
     status: Optional[str] = None
     year: Optional[int] = None
     score: Optional[float] = None
+    studios: List[str] = Field(default_factory=list)
+    duration: Optional[int] = None
     total_episodes: int = 0
     episodes: List[AnikageEpisode] = Field(default_factory=list)
+    relations: List[AnikageRelation] = Field(default_factory=list)
+    recommendations: List[AnikageRecommendation] = Field(default_factory=list)

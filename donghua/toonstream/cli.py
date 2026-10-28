@@ -2,64 +2,101 @@
 
 import argparse
 import sys
-from rich.console import Console
-from rich.table import Table
 from rich.panel import Panel
 
-from .scraper import ToonstreamScraper
+from common.ui import (
+    console,
+    print_banner,
+    status_spinner,
+    create_table,
+    box,
+)
 
-if sys.platform == "win32":
-    try:
-        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
-    except Exception:
-        pass
-
-console = Console()
+try:
+    from .scraper import ToonstreamScraper
+except ImportError:
+    from donghua.toonstream.scraper import ToonstreamScraper
 
 
 def print_search_results(results):
     if not results:
-        console.print("[yellow]No items found.[/yellow]")
+        console.print("\n[yellow]⚠️  No items found.[/yellow]\n")
         return
 
-    table = Table(title=f"Toonstream Results ({len(results)})", header_style="bold cyan")
-    table.add_column("Slug", style="cyan")
-    table.add_column("Title", style="bold white")
-    table.add_column("Type", style="green")
-    table.add_column("Score", style="yellow")
-    table.add_column("Link", style="blue")
+    table = create_table(
+        title=f"✨ Toonstream Results ({len(results)}) ✨",
+        columns=[
+            ("Slug", {"style": "cyan"}),
+            ("Title", {"style": "bold bright_white"}),
+            ("Type", {"style": "bright_green", "justify": "center"}),
+            ("Score", {"style": "bright_yellow", "justify": "center"}),
+            ("Link", {"style": "underline cyan"}),
+        ],
+        border_style="bright_blue",
+        header_style="bold bright_magenta",
+    )
 
     for r in results:
+        type_badge = f"[bold on dark_blue] {r.media_type.upper()} [/]"
+        score_val = f"⭐ {r.score}" if r.score else "N/A"
         table.add_row(
             r.slug,
             r.title,
-            r.media_type,
-            r.score or "N/A",
+            type_badge,
+            score_val,
             r.link,
         )
     console.print(table)
 
 
-def print_details(detail):
-    info = f"""[bold cyan]Title:[/bold cyan] {detail.title}
-[bold cyan]Type:[/bold cyan] {detail.media_type}
-[bold cyan]Slug:[/bold cyan] {detail.slug}
-[bold cyan]Genres:[/bold cyan] {', '.join(detail.genres) if detail.genres else 'N/A'}
-[bold cyan]Duration:[/bold cyan] {detail.duration or 'N/A'}
-[bold cyan]Cast:[/bold cyan] {', '.join(detail.cast[:4]) if detail.cast else 'N/A'}
-[bold cyan]Synopsis:[/bold cyan] {(detail.synopsis[:200] + '...') if detail.synopsis else 'N/A'}
+def print_details(detail, show_all: bool = False, limit: int = 50):
+    if not detail:
+        console.print("\n[red]❌ Could not retrieve details.[/red]\n")
+        return
+
+    genres_str = " • ".join(f"[bold bright_magenta]{g}[/]" for g in detail.genres) if detail.genres else "[dim]N/A[/dim]"
+    cast_str = ", ".join(detail.cast[:5]) if detail.cast else "[dim]N/A[/dim]"
+
+    info = f"""[bold bright_white]🎬 Title:[/bold bright_white]         [bold bright_yellow]{detail.title}[/bold bright_yellow]
+[bold bright_white]🔖 Slug:[/bold bright_white]          [cyan]{detail.slug}[/cyan]
+[bold bright_white]📺 Type:[/bold bright_white]          [bold on dark_blue] {detail.media_type.upper()} [/]
+[bold bright_white]⏱️  Duration:[/bold bright_white]      [bright_green]{detail.duration or 'N/A'}[/bright_green]
+[bold bright_white]👥 Cast:[/bold bright_white]          [dim]{cast_str}[/dim]
+[bold bright_white]🎭 Genres:[/bold bright_white]        {genres_str}
+
+[bold bright_white]📖 Synopsis:[/bold bright_white]
+[italic white]{detail.synopsis.strip() if detail.synopsis else 'N/A'}[/italic white]
 """
-    console.print(Panel(info, title=f"Toonstream: {detail.title}", border_style="cyan"))
+    console.print(
+        Panel(
+            info.strip(),
+            title=f"[bold bright_cyan]✦ {detail.title.upper()} ✦[/bold bright_cyan]",
+            border_style="bright_cyan",
+            box=box.ROUNDED,
+            padding=(1, 2),
+        )
+    )
 
     if detail.media_type == "series" and detail.seasons:
         for s in detail.seasons:
-            table = Table(title=f"{s.title} ({len(s.episodes)} episodes)", header_style="bold green")
-            table.add_column("Code", style="cyan", width=8)
-            table.add_column("Title", style="white")
-            table.add_column("Episode Link", style="blue")
-            for ep in s.episodes:
+            ep_list = s.episodes if show_all else s.episodes[:limit]
+            table = create_table(
+                title=f"📺 {s.title} ({len(s.episodes)} Episodes Total{' - Showing First ' + str(limit) if not show_all and len(s.episodes) > limit else ''})",
+                columns=[
+                    ("Code", {"style": "bold bright_yellow", "justify": "center", "width": 8}),
+                    ("Title", {"style": "bold bright_white"}),
+                    ("Episode Link", {"style": "underline cyan"}),
+                ],
+                border_style="cyan",
+                header_style="bold bright_cyan",
+            )
+            for ep in ep_list:
                 table.add_row(ep.episode_code, ep.title, ep.link)
+
+            if not show_all and len(s.episodes) > limit:
+                remaining = len(s.episodes) - limit
+                table.add_row("...", f"[dim italic]+ {remaining} more episodes (use --all to show all)[/dim italic]", "...")
+
             console.print(table)
     elif detail.movie_streams:
         print_stream_servers(detail.movie_streams)
@@ -67,19 +104,25 @@ def print_details(detail):
 
 def print_stream_servers(servers):
     if not servers:
-        console.print("[yellow]No streaming servers found.[/yellow]")
+        console.print("\n[yellow]⚠️  No streaming servers found.[/yellow]\n")
         return
 
-    table = Table(title=f"Available Streaming Servers ({len(servers)})", header_style="bold magenta")
-    table.add_column("Server", style="bold cyan")
-    table.add_column("Embed URL", style="white")
-    table.add_column("Resolved Inner Player", style="green")
+    table = create_table(
+        title=f"🖥️  Available Streaming Servers ({len(servers)})",
+        columns=[
+            ("Server", {"style": "bold bright_white"}),
+            ("Embed URL", {"style": "underline cyan"}),
+            ("Resolved Inner Player", {"style": "bright_green"}),
+        ],
+        border_style="bright_green",
+        header_style="bold bright_green",
+    )
 
     for s in servers:
         table.add_row(
             s.server_name,
             s.embed_url,
-            s.inner_iframe_url or "Direct",
+            s.inner_iframe_url or "[dim]Direct[/dim]",
         )
     console.print(table)
 
@@ -106,6 +149,8 @@ def main():
     # Detail
     detail_parser = subparsers.add_parser("detail", help="Get series or movie details")
     detail_parser.add_argument("slug", help="Slug or URL of the title")
+    detail_parser.add_argument("--all", "-a", action="store_true", help="Show all episodes without truncating")
+    detail_parser.add_argument("--limit", type=int, default=50, help="Episode table display limit (default: 50)")
 
     # Streams
     stream_parser = subparsers.add_parser("streams", help="Get stream server links for episode or movie")
@@ -116,29 +161,37 @@ def main():
         parser.print_help()
         return
 
+    print_banner("ToonStream", "Cartoons, Anime & Movies Streaming Scraper")
+
     scraper = ToonstreamScraper()
 
     try:
         if args.command == "search":
-            console.print(f"[bold cyan]Searching Toonstream for:[/bold cyan] {args.query}")
-            results = scraper.search(args.query, page=args.page)
+            with status_spinner(f"Searching Toonstream for '{args.query}'..."):
+                results = scraper.search(args.query, page=args.page)
             print_search_results(results)
 
         elif args.command == "catalog":
-            console.print(f"[bold cyan]Browsing category:[/bold cyan] {args.category} (Page {args.page})")
-            results = scraper.get_catalog(args.category, page=args.page)
+            with status_spinner(f"Browsing category '{args.category}' (Page {args.page})..."):
+                results = scraper.get_catalog(args.category, page=args.page)
             print_search_results(results)
 
         elif args.command == "detail":
-            console.print(f"[bold cyan]Fetching details for:[/bold cyan] {args.slug}")
-            detail = scraper.get_detail(args.slug)
-            print_details(detail)
+            with status_spinner(f"Fetching details for '{args.slug}'..."):
+                detail = scraper.get_detail(args.slug)
+            print_details(detail, show_all=getattr(args, "all", False), limit=getattr(args, "limit", 50))
 
         elif args.command == "streams":
-            console.print(f"[bold cyan]Extracting streaming servers for:[/bold cyan] {args.url}")
-            servers = scraper.get_stream_servers(args.url)
+            with status_spinner(f"Extracting streaming servers for '{args.url}'..."):
+                servers = scraper.get_stream_servers(args.url)
             print_stream_servers(servers)
 
+    except KeyboardInterrupt:
+        console.print("\n[yellow]Operation cancelled by user.[/yellow]")
+        sys.exit(130)
+    except Exception as e:
+        console.print(f"\n[red]❌ Error: {e}[/red]\n")
+        sys.exit(1)
     finally:
         scraper.close()
 

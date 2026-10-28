@@ -12,6 +12,8 @@ from .models import (
     AnikageEpisode,
     AnikageStreamSource,
     AnikageSubtitle,
+    AnikageRelation,
+    AnikageRecommendation,
 )
 
 logger = logging.getLogger("anikage.scraper")

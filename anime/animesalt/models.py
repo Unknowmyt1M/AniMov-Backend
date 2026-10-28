@@ -39,10 +39,14 @@ class AnimeSaltSeriesDetail(BaseModel):
     poster: Optional[str] = None
     synopsis: Optional[str] = None
     genres: List[str] = Field(default_factory=list)
+    languages: List[str] = Field(default_factory=list)
+    duration: Optional[str] = None
     year: Optional[str] = None
     rating: Optional[str] = None
     status: Optional[str] = None
     total_episodes: int = 0
+    total_seasons: Optional[int] = None
+    seasons: List[int] = Field(default_factory=list)
     episodes: List[AnimeSaltEpisode] = Field(default_factory=list)
 
 

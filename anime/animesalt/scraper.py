@@ -5,7 +5,7 @@ import json
 import re
 import logging
 from typing import List, Optional
-from urllib.parse import urlparse, parse_qs
+from urllib.parse import urlparse, parse_qs, unquote
 from pathlib import Path
 from bs4 import BeautifulSoup
 
@@ -94,12 +94,71 @@ class AnimeSaltScraper:
 
         return results
 
+    def _parse_episodes(
+        self,
+        container: BeautifulSoup,
+        default_season: Optional[int] = None,
+        seen_slugs: Optional[set] = None,
+    ) -> List[AnimeSaltEpisode]:
+        """Extract episode items from a page or AJAX fragment."""
+        if seen_slugs is None:
+            seen_slugs = set()
+
+        episodes: List[AnimeSaltEpisode] = []
+        ep_links = container.find_all("a", href=lambda h: h and "/episode/" in h)
+
+        for a in ep_links:
+            href = a.get("href", "")
+            ep_slug = self._extract_slug(href)
+            if not ep_slug or ep_slug in seen_slugs:
+                continue
+            seen_slugs.add(ep_slug)
+
+            parent = a.find_parent(["article", "li", ".episodes", ".post"])
+
+            # Extract season and episode number e.g. naruto-1x2
+            m = re.search(r'(\d+)x(\d+)', ep_slug)
+            if m:
+                s_num = int(m.group(1))
+                ep_num = int(m.group(2))
+            else:
+                num_el = parent.select_one(".num-epi, .ep, .num") if parent else None
+                num_text = num_el.get_text(strip=True) if num_el else ""
+                m_num = re.search(r'(\d+)x(\d+)', num_text)
+                if m_num:
+                    s_num = int(m_num.group(1))
+                    ep_num = int(m_num.group(2))
+                else:
+                    s_num = default_season or 1
+                    m_ep = re.search(r'(?:ep|episode)[^\d]*(\d+)', ep_slug, re.I)
+                    ep_num = int(m_ep.group(1)) if m_ep else len(episodes) + 1
+
+            title_el = parent.find([".entry-title", "h2", "h3"]) if parent else None
+            ep_title = (
+                title_el.get_text(strip=True)
+                if title_el and title_el.get_text(strip=True)
+                else (a.get_text(strip=True) or a.get("title") or f"Episode {ep_num}")
+            )
+            ep_title = re.sub(r"\s*-\s*Anime\s*Salt.*$", "", ep_title, flags=re.I).strip() or f"Episode {ep_num}"
+
+            episodes.append(
+                AnimeSaltEpisode(
+                    slug=ep_slug,
+                    season_num=s_num,
+                    episode_num=ep_num,
+                    title=ep_title,
+                    link=href if href.startswith("http") else f"{BASE_URL}{href}",
+                )
+            )
+
+        return episodes
+
     def get_series_detail(self, slug_or_url: str, use_cache: bool = True, max_age_seconds: Optional[int] = 86400 * 7) -> Optional[AnimeSaltSeriesDetail]:
-        """Fetch series details, metadata, and full episode catalog."""
+        """Fetch series details, metadata, and full episode catalog across all seasons."""
         slug = self._extract_slug(slug_or_url)
         if use_cache:
             cached = self.storage.get_series(slug, max_age_seconds=max_age_seconds)
-            if cached and cached.episodes:
+            if cached and cached.episodes and cached.total_seasons is not None and getattr(cached, "languages", None):
                 return cached
 
         url = slug_or_url if slug_or_url.startswith("http") else f"{BASE_URL}/series/{slug}/"
@@ -130,57 +189,93 @@ class AnimeSaltScraper:
             if poster and poster.startswith("//"):
                 poster = f"https:{poster}"
 
-        synopsis_el = soup.select_one(".wp-content p, .sinopsis, .entry-content p")
+        synopsis_el = soup.select_one("#overview-text p, .description p, .description, .wp-content p, .sinopsis, .entry-content p")
         synopsis = synopsis_el.get_text(strip=True) if synopsis_el else None
 
         genres = [
             a.get_text(strip=True)
-            for a in soup.select(".sgeneros a, .genres a, a[href*='/genre/'], a[href*='/genres/']")
+            for a in soup.select(".sgeneros a, .genres a, a[href*='/category/genre/'], a[href*='/genre/'], a[href*='/genres/']")
             if a.get_text(strip=True)
         ]
         genres = list(dict.fromkeys(genres))
 
-        # Extract episodes
-        episodes: List[AnimeSaltEpisode] = []
-        ep_links = soup.find_all("a", href=lambda h: h and "/episode/" in h)
+        languages = [
+            a.get_text(strip=True)
+            for a in soup.select("a[href*='/category/language/'], a[href*='/language/'], .loadactor a")
+            if a.get_text(strip=True)
+        ]
+        languages = list(dict.fromkeys(languages))
+
+        # Extract duration & year from pills or overview
+        duration = None
+        year = None
+        for div in soup.find_all("div"):
+            if div.find("svg") and len(div.find_all("div")) == 0:
+                txt = div.get_text(" ", strip=True)
+                if re.search(r'\b\d+\s*min\b', txt, re.I) and not duration:
+                    duration = txt
+                elif re.search(r'\b(19\d\d|20\d\d)\b', txt) and not year:
+                    year = re.search(r'\b(19\d\d|20\d\d)\b', txt).group(1)
+
+        if not duration:
+            dur_el = soup.select_one(".duration .overviewCss, .duration, .runtime")
+            duration = dur_el.get_text(strip=True) if dur_el else None
+
+        if not year:
+            yr_el = soup.select_one(".year .overviewCss, .year, .release-date")
+            year = yr_el.get_text(strip=True) if yr_el else None
 
         seen_slugs = set()
-        for a in ep_links:
-            href = a.get("href", "")
-            ep_slug = self._extract_slug(href)
-            if not ep_slug or ep_slug in seen_slugs:
-                continue
-            seen_slugs.add(ep_slug)
 
-            # Extract season and episode number e.g. solo-leveling-1x2
-            m = re.search(r'(\d+)x(\d+)', ep_slug)
-            if m:
-                s_num = int(m.group(1))
-                ep_num = int(m.group(2))
-            else:
-                s_num = 1
-                ep_num = len(episodes) + 1
+        # Check for active season rendered in initial HTML
+        active_season: Optional[int] = None
+        active_dt = soup.select_one(".choose-season dt.n_s, .choose-season button dt")
+        if active_dt and active_dt.get_text(strip=True).isdigit():
+            active_season = int(active_dt.get_text(strip=True))
 
-            parent = a.find_parent(["article", "li", ".episodes", ".post"])
-            title_el = parent.find([".entry-title", "h2", "h3"]) if parent else None
-            ep_title = (
-                title_el.get_text(strip=True)
-                if title_el and title_el.get_text(strip=True)
-                else (a.get_text(strip=True) or a.get("title") or f"Episode {ep_num}")
-            )
+        episodes: List[AnimeSaltEpisode] = self._parse_episodes(
+            soup, default_season=active_season, seen_slugs=seen_slugs
+        )
 
-            episodes.append(
-                AnimeSaltEpisode(
-                    slug=ep_slug,
-                    season_num=s_num,
-                    episode_num=ep_num,
-                    title=ep_title,
-                    link=href if href.startswith("http") else f"{BASE_URL}{href}",
-                )
-            )
+        # Check for multiple seasons (ToroFilm AJAX choose-season selector)
+        season_elements = soup.select(".choose-season a[data-season], .sel-temp a[data-season], a[data-season]")
+        season_map: dict[int, str] = {}
+        for el in season_elements:
+            s_attr = el.get("data-season")
+            p_attr = el.get("data-post")
+            if s_attr and s_attr.isdigit() and p_attr:
+                season_map[int(s_attr)] = p_attr
 
-        # Sort episodes by season then episode num
+        if season_map:
+            for s_num in sorted(season_map.keys()):
+                # Skip if already fully extracted from initial page HTML
+                if active_season and s_num == active_season and any(ep.season_num == s_num for ep in episodes):
+                    continue
+
+                post_id = season_map[s_num]
+                logger.info(f"Fetching Season {s_num} episodes via AJAX for '{slug}' (post={post_id})...")
+                try:
+                    ajax_res = self.client.get(
+                        f"{BASE_URL}/wp-admin/admin-ajax.php",
+                        params={
+                            "action": "action_select_season",
+                            "season": str(s_num),
+                            "post": str(post_id),
+                        },
+                    )
+                    if ajax_res.status_code == 200 and ajax_res.text:
+                        s_soup = BeautifulSoup(ajax_res.text, "html.parser")
+                        s_eps = self._parse_episodes(
+                            s_soup, default_season=s_num, seen_slugs=seen_slugs
+                        )
+                        episodes.extend(s_eps)
+                except Exception as e:
+                    logger.warning(f"Failed to fetch Season {s_num} episodes for '{slug}': {e}")
+
         episodes.sort(key=lambda x: (x.season_num, x.episode_num))
+
+        detected_seasons = sorted(list(set(ep.season_num for ep in episodes))) if episodes else (sorted(season_map.keys()) if season_map else [1])
+        total_seasons = len(detected_seasons)
 
         detail = AnimeSaltSeriesDetail(
             slug=slug,
@@ -188,7 +283,12 @@ class AnimeSaltScraper:
             poster=poster,
             synopsis=synopsis,
             genres=genres,
+            languages=languages,
+            duration=duration,
+            year=year,
             total_episodes=len(episodes),
+            total_seasons=total_seasons,
+            seasons=detected_seasons,
             episodes=episodes,
         )
 
@@ -226,27 +326,28 @@ class AnimeSaltScraper:
         audio_streams: List[AnimeSaltAudioStream] = []
         iframe_url = None
 
-        for ifr in soup.find_all("iframe", src=True):
-            src = ifr.get("src", "").strip()
+        for ifr in soup.find_all("iframe"):
+            src = ifr.get("src") or ifr.get("data-src") or ""
+            src = src.strip()
             if not src:
                 continue
 
-            if not iframe_url:
+            if not iframe_url and not any(k in src.lower() for k in ["google", "facebook", "twitter"]):
                 iframe_url = src
 
-            # Check if multi-lang-plyr.php
-            if "multi-lang-plyr.php" in src:
+            # Decode JSON multi-language tracks from player.php?data= or multi-lang-plyr.php?data=
+            if "data=" in src:
                 parsed = urlparse(src)
                 qs = parse_qs(parsed.query)
                 data_param = qs.get("data", [""])[0]
                 if data_param:
                     try:
-                        decoded_json = base64.b64decode(data_param).decode("utf-8")
+                        decoded_json = base64.b64decode(unquote(data_param)).decode("utf-8")
                         langs_data = json.loads(decoded_json)
                         for item in langs_data:
                             lang = item.get("language", "Unknown")
                             link = item.get("link", "")
-                            if link:
+                            if link and not any(s.link == link for s in audio_streams):
                                 audio_streams.append(
                                     AnimeSaltAudioStream(
                                         language=lang,
@@ -256,13 +357,15 @@ class AnimeSaltScraper:
                     except Exception as e:
                         logger.error(f"Error decoding multi-lang player data: {e}")
 
-            elif any(k in src for k in ["abyssplayer", "play", "embed", "cdn", "stream"]):
-                audio_streams.append(
-                    AnimeSaltAudioStream(
-                        language="Default",
-                        link=src,
+            elif any(k in src.lower() for k in ["abyssplayer", "ravok", "zephyrix", "play", "embed", "cdn", "stream"]):
+                if not any(s.link == src for s in audio_streams):
+                    name = "Ravok" if "ravok" in src.lower() else ("Zephyrix" if "zephyrix" in src.lower() else "Default")
+                    audio_streams.append(
+                        AnimeSaltAudioStream(
+                            language=name,
+                            link=src,
+                        )
                     )
-                )
 
         ep = AnimeSaltEpisode(
             slug=ep_slug,
