@@ -87,7 +87,11 @@ class ZephyrixExtractor:
         if res.status_code != 200:
             raise RuntimeError(f"Zephyrix API returned HTTP {res.status_code}")
 
-        res_json = res.json()
+        try:
+            res_json = res.json()
+        except Exception:
+            raise RuntimeError(f"Zephyrix video {video_id} returned invalid or expired response")
+
         master_m3u8 = res_json.get("securedLink") or res_json.get("videoSource")
 
         return {
