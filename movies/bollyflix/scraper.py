@@ -29,7 +29,7 @@ class BollyflixScraper:
             if cached is not None:
                 return [MovieSearchResult(**item) for item in cached]
 
-        search_url = f"{config.base_url}/?s={urllib.parse.quote(cleaned_query)}"
+        search_url = f"{self.http.base_url}/?s={urllib.parse.quote(cleaned_query)}"
         resp = self.http.get(search_url)
         if resp.status_code != 200:
             return []
@@ -109,7 +109,7 @@ class BollyflixScraper:
             slug = page_url.rstrip("/").split("/")[-1]
         else:
             slug = slug_or_url
-            page_url = f"{config.base_url}/{slug}/"
+            page_url = f"{self.http.base_url}/{slug}/"
 
         if use_cache:
             cached = self.storage.get_movie(slug)
