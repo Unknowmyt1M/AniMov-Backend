@@ -30,17 +30,17 @@ class DailymotionExtractor:
     def extract_video_id(url: str) -> Optional[str]:
         """Extract Dailymotion video ID from various embed and watch URL formats."""
         # 1. geo.dailymotion.com/player/...html?video=k4wD3bgoXxbXrVM5AaC
-        m_query = re.search(r"video=([a-zA-Z0-9]+)", url)
+        m_query = re.search(r"video=([a-zA-Z0-9]+)", url, re.IGNORECASE)
         if m_query:
             return m_query.group(1)
 
         # 2. dailymotion.com/embed/video/k42LYHJBnNf8NCIyyk6 or /video/k42LYHJBnNf8NCIyyk6
-        m_path = re.search(r"/video/([a-zA-Z0-9]+)", url)
+        m_path = re.search(r"/video/([a-zA-Z0-9]+)", url, re.IGNORECASE)
         if m_path:
             return m_path.group(1)
 
         # 3. dai.ly/k42LYHJBnNf8NCIyyk6
-        m_short = re.search(r"dai\.ly/([a-zA-Z0-9]+)", url)
+        m_short = re.search(r"dai\.ly/([a-zA-Z0-9]+)", url, re.IGNORECASE)
         if m_short:
             return m_short.group(1)
 

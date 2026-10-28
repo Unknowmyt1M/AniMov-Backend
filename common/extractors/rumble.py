@@ -36,17 +36,17 @@ class RumbleExtractor:
             - https://rumble.com/v7dvlfe -> v7dvlfe
         """
         # 1. /embed/v7dvlfe
-        m_embed = re.search(r"/embed/([a-zA-Z0-9]+)", url)
+        m_embed = re.search(r"/embed/([a-zA-Z0-9]+)", url, re.IGNORECASE)
         if m_embed:
             return m_embed.group(1)
 
         # 2. /v7dvlfe-slug.html or /v7dvlfe
-        m_watch = re.search(r"/v([a-zA-Z0-9]+)(?:-[^/?#]+)?(?:\.html)?", url)
+        m_watch = re.search(r"/v([a-zA-Z0-9]+)(?:-[^/?#]+)?(?:\.html)?", url, re.IGNORECASE)
         if m_watch:
             return f"v{m_watch.group(1)}"
 
         # 3. Query param ?v=v7dvlfe
-        m_query = re.search(r"[?&]v=([a-zA-Z0-9]+)", url)
+        m_query = re.search(r"[?&]v=([a-zA-Z0-9]+)", url, re.IGNORECASE)
         if m_query:
             return m_query.group(1)
 

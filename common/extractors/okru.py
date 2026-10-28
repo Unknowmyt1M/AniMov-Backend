@@ -38,17 +38,17 @@ class OkRuExtractor:
             - https://ok.ru/dk?cmd=videoPlayerMetadata&mid=15855292975668 -> 15855292975668
         """
         # 1. /videoembed/15855292975668
-        m_embed = re.search(r"/videoembed/([0-9]+)", url)
+        m_embed = re.search(r"/videoembed/([0-9]+)", url, re.IGNORECASE)
         if m_embed:
             return m_embed.group(1)
 
         # 2. /video/15855292975668
-        m_watch = re.search(r"/video/([0-9]+)", url)
+        m_watch = re.search(r"/video/([0-9]+)", url, re.IGNORECASE)
         if m_watch:
             return m_watch.group(1)
 
         # 3. mid=15855292975668
-        m_mid = re.search(r"[?&]mid=([0-9]+)", url)
+        m_mid = re.search(r"[?&]mid=([0-9]+)", url, re.IGNORECASE)
         if m_mid:
             return m_mid.group(1)
 

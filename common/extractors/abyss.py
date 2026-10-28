@@ -18,6 +18,53 @@ class AbyssExtractor:
     def __init__(self, session: Optional[requests.Session] = None):
         self.session = session or requests.Session(impersonate="chrome124")
 
+    @staticmethod
+    def can_handle(url: str) -> bool:
+        """Check if URL is an Abyss or DubPlayer embed."""
+        low = url.lower()
+        return "abyssplayer.com" in low or "dub-player" in low
+
+    def extract(self, embed_url: str, referer: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Unified extraction method for Abyss player or DubPlayer embed.
+
+        :param embed_url: DubPlayer or Abyss player URL
+        :param referer: Optional referring URL
+        :return: Dict containing stream sources and metadata
+        """
+        ref = referer or "https://watchanimeworld.one/"
+        if "dub-player" in embed_url.lower():
+            dub_info = self.extract_from_dub_player(embed_url, referer=ref)
+            streams_by_lang = dub_info.get("streams_by_lang", {})
+            direct_sources = []
+            # Resolve the first available language's stream (prefer 'hin' if available)
+            target_lang = "hin" if "hin" in streams_by_lang else (next(iter(streams_by_lang)) if streams_by_lang else None)
+            if target_lang and streams_by_lang.get(target_lang):
+                try:
+                    direct_sources = self.extract_direct_sources(streams_by_lang[target_lang])
+                except Exception as e:
+                    logger.warning(f"Could not resolve direct sources for {target_lang}: {e}")
+
+            return {
+                "server": "DubPlayer (Abyss)",
+                "title": dub_info.get("title"),
+                "season": dub_info.get("season"),
+                "episode": dub_info.get("episode"),
+                "languages": dub_info.get("languages", []),
+                "streams_by_lang": streams_by_lang,
+                "selected_lang": target_lang,
+                "direct_sources": direct_sources,
+                "headers": {"Referer": ref},
+            }
+        else:
+            sources = self.extract_direct_sources(embed_url)
+            return {
+                "server": "Abyss",
+                "embed_url": embed_url,
+                "direct_sources": sources,
+                "headers": {"Referer": ref},
+            }
+
     def extract_from_dub_player(self, dub_player_url: str, referer: str = "https://watchanimeworld.one/") -> Dict[str, Any]:
         """
         Extract multi-language audio mappings from /dub-player/ page.

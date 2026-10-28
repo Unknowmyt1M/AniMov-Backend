@@ -34,6 +34,9 @@ def resolve_stream_url(embed_url: str, referer: Optional[str] = None) -> Dict[st
     :param referer: Optional referer header
     :return: Dict containing extracted stream URLs and metadata
     """
+    if not embed_url or not embed_url.strip():
+        raise ValueError("Empty or invalid URL provided")
+
     url = embed_url.strip()
     low = url.lower()
 
