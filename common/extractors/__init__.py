@@ -9,6 +9,10 @@ for all primary streaming players, embed hosts, and packed JavaScript video serv
 - Zephyrix / MultiCloud / Ravok (play.zephyrix.org / ravok.buzz)
 - Abyss / DubPlayer (player.abyssplayer.com)
 - Packed Hosts (VidHide, StreamWish, WishFast, FileMoon, FileLions, Vtbe, Waaw)
+- DoodStream / Playmogo (dood.to, doods.pro, playmogo.com)
+- StreamTape (streamtape.com, streamta.pe)
+- MegaPlay / MegaCloud / RapidCloud (megaplay.buzz, megacloud.tv, vidstream.pro)
+- Voe (voe.sx, repackcloud.com)
 """
 
 import logging
@@ -21,6 +25,10 @@ from .dailymotion import DailymotionExtractor
 from .rumble import RumbleExtractor
 from .okru import OkRuExtractor
 from .packed_hosts import PackedHostExtractor
+from .doodstream import DoodStreamExtractor
+from .streamtape import StreamTapeExtractor
+from .megaplay import MegaPlayExtractor
+from .voe import VoeExtractor
 
 logger = logging.getLogger("extractors")
 
@@ -65,12 +73,32 @@ def resolve_stream_url(embed_url: str, referer: Optional[str] = None) -> Dict[st
         logger.info(f"Resolving via AbyssExtractor: {url}")
         return AbyssExtractor().extract(url, referer=referer or "https://watchanimeworld.one/")
 
-    # 6. Packed Hosts (VidHide, StreamWish, FileMoon, FileLions, etc.)
+    # 6. DoodStream / Playmogo
+    if DoodStreamExtractor.can_handle(url):
+        logger.info(f"Resolving via DoodStreamExtractor: {url}")
+        return DoodStreamExtractor().extract(url, referer=referer)
+
+    # 7. StreamTape
+    if StreamTapeExtractor.can_handle(url):
+        logger.info(f"Resolving via StreamTapeExtractor: {url}")
+        return StreamTapeExtractor().extract(url, referer=referer)
+
+    # 8. MegaPlay / MegaCloud / RapidCloud
+    if MegaPlayExtractor.can_handle(url):
+        logger.info(f"Resolving via MegaPlayExtractor: {url}")
+        return MegaPlayExtractor().extract(url, referer=referer)
+
+    # 9. Voe
+    if VoeExtractor.can_handle(url):
+        logger.info(f"Resolving via VoeExtractor: {url}")
+        return VoeExtractor().extract(url, referer=referer)
+
+    # 10. Packed Hosts (VidHide, StreamWish, FileMoon, FileLions, Vtbe, Waaw, etc.)
     if PackedHostExtractor.can_handle(url):
         logger.info(f"Resolving via PackedHostExtractor: {url}")
         return PackedHostExtractor().extract(url, referer=referer)
 
-    # 7. Generic Fallback via yt-dlp
+    # 11. Generic Fallback via yt-dlp
     logger.info(f"Unknown host family for {url}. Attempting generic yt-dlp extraction...")
     try:
         import yt_dlp
@@ -127,5 +155,9 @@ __all__ = [
     "RumbleExtractor",
     "OkRuExtractor",
     "PackedHostExtractor",
+    "DoodStreamExtractor",
+    "StreamTapeExtractor",
+    "MegaPlayExtractor",
+    "VoeExtractor",
     "resolve_stream_url",
 ]
