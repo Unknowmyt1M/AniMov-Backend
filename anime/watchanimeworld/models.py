@@ -1,6 +1,6 @@
 """Data models for WatchAnimeWorld Scraper using Pydantic v2."""
 
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field
 
 
@@ -19,6 +19,9 @@ class WatchAnimeWorldServer(BaseModel):
     """Streaming server mirror or embed."""
     name: str
     embed_url: str
+    direct_m3u8: Optional[str] = None
+    direct_sources: List[Dict[str, Any]] = Field(default_factory=list)
+    languages: List[str] = Field(default_factory=list)
 
 
 class WatchAnimeWorldEpisode(BaseModel):

@@ -2,7 +2,7 @@
 
 import re
 import logging
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from pathlib import Path
 from bs4 import BeautifulSoup
 
@@ -279,10 +279,70 @@ class WatchAnimeWorldScraper:
         self.storage.save_series(detail)
         return detail
 
-    def get_episode_streams(self, slug_or_url: str, use_cache: bool = True) -> Optional[WatchAnimeWorldEpisode]:
+    def resolve_stream(self, embed_url: str, referer: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Resolve any WatchAnimeWorld embed iframe into direct HLS (.m3u8) or video stream links.
+        Supports Zephyrix (MultiCloud), DubPlayer (Abyss), and Dean Edwards packed hosts.
+        """
+        ref = referer or BASE_URL
+        embed_lower = embed_url.lower()
+
+        # 1. Zephyrix / MultiCloud
+        if "zephyrix" in embed_lower or "zephyrflick" in embed_lower:
+            try:
+                from common.extractors.zephyrix import ZephyrixExtractor
+                extractor = ZephyrixExtractor(session=self.client.session)
+                return extractor.extract(embed_url, referer=ref)
+            except Exception as e:
+                logger.warning(f"ZephyrixExtractor error for {embed_url}: {e}")
+                return {"error": str(e), "embed_url": embed_url}
+
+        # 2. DubPlayer / Abyss
+        elif "dub-player" in embed_lower or "abyssplayer" in embed_lower:
+            try:
+                from common.extractors.abyss import AbyssExtractor
+                extractor = AbyssExtractor(session=self.client.session)
+                if "dub-player" in embed_lower:
+                    meta = extractor.extract_from_dub_player(embed_url, referer=ref)
+                    lang_map = meta.get("streams_by_lang", {})
+                    target_lang = "hin" if "hin" in lang_map else next(iter(lang_map), None)
+                    if target_lang:
+                        try:
+                            direct = extractor.extract_direct_sources(lang_map[target_lang])
+                            meta["resolved_lang"] = target_lang
+                            meta["direct_sources"] = direct
+                        except Exception as de:
+                            logger.warning(f"Abyss direct resolution error: {de}")
+                    return meta
+                else:
+                    direct = extractor.extract_direct_sources(embed_url)
+                    return {"server": "Abyss", "direct_sources": direct}
+            except Exception as e:
+                logger.warning(f"AbyssExtractor error for {embed_url}: {e}")
+                return {"error": str(e), "embed_url": embed_url}
+
+        # 3. Generic packed JS hosts (vtbe, filemoon, wishfast, vidhide)
+        else:
+            try:
+                from common.extractors.unpacker import unpack_js, is_packed
+                res = self.client.get(embed_url, headers={"Referer": ref})
+                if is_packed(res.text):
+                    unpacked = unpack_js(res.text)
+                    if unpacked:
+                        m3u8_match = re.search(r'https?://[^\s"\'<>]+\.m3u8[^\s"\'<>]*', unpacked)
+                        file_match = re.search(r'sources:\s*\[\s*\{\s*file:\s*["\']([^"\']+)["\']', unpacked)
+                        direct_url = m3u8_match.group(0) if m3u8_match else (file_match.group(1) if file_match else None)
+                        if direct_url:
+                            return {"server": "Packed Host", "master_m3u8": direct_url}
+            except Exception as e:
+                logger.warning(f"Generic packed extractor error for {embed_url}: {e}")
+
+        return {"server": "Unknown Embed", "embed_url": embed_url}
+
+    def get_episode_streams(self, slug_or_url: str, use_cache: bool = True, resolve_direct: bool = False) -> Optional[WatchAnimeWorldEpisode]:
         """Fetch player embeds and streaming servers for an episode."""
         ep_slug = self._extract_slug(slug_or_url)
-        if use_cache:
+        if use_cache and not resolve_direct:
             cached = self.storage.get_episode(ep_slug)
             if cached and cached.servers:
                 return cached
@@ -352,6 +412,17 @@ class WatchAnimeWorldScraper:
                     src = f"{BASE_URL}{src}"
                 name = "Zephyrix" if "zephyrix" in src else f"Server {len(servers) + 1}"
                 servers.append(WatchAnimeWorldServer(name=name, embed_url=src))
+
+        # Resolve direct streams if requested
+        if resolve_direct and servers:
+            for s in servers:
+                stream_res = self.resolve_stream(s.embed_url, referer=url)
+                if stream_res.get("master_m3u8"):
+                    s.direct_m3u8 = stream_res["master_m3u8"]
+                if stream_res.get("direct_sources"):
+                    s.direct_sources = stream_res["direct_sources"]
+                if stream_res.get("languages"):
+                    s.languages = stream_res["languages"]
 
         ep = WatchAnimeWorldEpisode(
             slug=ep_slug,

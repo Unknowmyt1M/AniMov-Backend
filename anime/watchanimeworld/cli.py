@@ -161,7 +161,7 @@ def print_series_detail(
             )
 
 
-def print_episode_streams(ep):
+def print_episode_streams(ep, direct_resolved: bool = False):
     if not ep:
         console.print("\n[red]❌ Could not retrieve episode streams.[/red]\n")
         return
@@ -182,19 +182,69 @@ def print_episode_streams(ep):
         )
     )
 
+    has_direct = any(s.direct_m3u8 or s.direct_sources for s in (ep.servers or []))
+
+    if has_direct:
+        for s in ep.servers:
+            if s.direct_m3u8:
+                m3u8_panel = Panel(
+                    f"[bold bright_white]Master Playlist (.m3u8):[/bold bright_white]\n[bold bright_green]{s.direct_m3u8}[/bold bright_green]\n\n"
+                    f"[dim]💡 Playable directly via: [bold white]mpv \"{s.direct_m3u8}\"[/bold white] or VLC[/dim]",
+                    title=f"[bold bright_cyan]⚡ {s.name.upper()} — Direct HLS Stream[/bold bright_cyan]",
+                    border_style="bright_cyan",
+                    box=box.ROUNDED,
+                    padding=(1, 2),
+                )
+                console.print(m3u8_panel)
+
+            if s.direct_sources:
+                lang_tags = ""
+                if s.languages:
+                    lang_tags = " ".join(f"[bold black on bright_cyan] {l.upper()} [/]" for l in s.languages)
+                    lang_tags = f"\n[bold bright_white]Available Audio Dubs:[/bold bright_white] {lang_tags}\n"
+
+                direct_table = Table(
+                    title=f"⚡ {s.name.upper()} — Direct Video Streams ({len(s.direct_sources)})",
+                    header_style="bold bright_yellow",
+                    border_style="bright_yellow",
+                    box=box.ROUNDED,
+                    show_lines=True,
+                )
+                direct_table.add_column("Quality", style="bold bright_green", justify="center", width=10)
+                direct_table.add_column("Codec", style="bold bright_magenta", justify="center", width=10)
+                direct_table.add_column("Size", style="bright_yellow", justify="center", width=12)
+                direct_table.add_column("Direct Streaming URL", style="underline bright_white", overflow="fold")
+
+                for src in s.direct_sources:
+                    q = src.get("quality", "N/A")
+                    codec = src.get("codec", "N/A")
+                    size_bytes = src.get("size_bytes")
+                    size_str = f"{size_bytes / (1024 * 1024):.1f} MB" if size_bytes else "N/A"
+                    url = src.get("url", "")
+                    direct_table.add_row(q, codec, size_str, url)
+
+                if lang_tags:
+                    console.print(lang_tags.strip())
+                console.print(direct_table)
+
     if ep.servers:
         srv_table = Table(
-            title="🚀 Available Streaming Mirrors & Embeds",
-            header_style="bold bright_yellow",
-            border_style="bright_yellow",
+            title="🚀 Available Player Embeds & Mirrors",
+            header_style="bold bright_magenta",
+            border_style="bright_blue",
             box=box.ROUNDED,
             show_lines=True,
         )
         srv_table.add_column("Server / Mirror", style="bold bright_cyan", width=22)
-        srv_table.add_column("Embed URL", style="underline bright_white")
+        srv_table.add_column("Embed URL", style="underline bright_white", overflow="fold")
         for s in ep.servers:
             srv_table.add_row(f"⚡ {s.name}", s.embed_url)
         console.print(srv_table)
+
+        if not has_direct and not direct_resolved:
+            console.print(
+                f"[dim]💡 Tip: Use [bold white]--stream {ep.slug}[/bold white] to unpack and resolve direct .m3u8 & video stream URLs![/dim]\n"
+            )
     else:
         console.print("[yellow]⚠️  No parsed streaming servers found.[/yellow]")
 
@@ -207,6 +257,7 @@ def main():
     parser.add_argument("--season", "-sn", type=int, default=None, help="Filter episode display by season number")
     parser.add_argument("--limit", "-l", type=int, default=25, help="Number of episodes to display (default: 25)")
     parser.add_argument("--episode", "-e", type=str, help="Episode slug or URL (e.g. the-elusive-samurai-2x1)")
+    parser.add_argument("--stream", "-st", nargs="?", const="", default=None, help="Extract direct .m3u8 and video stream links (e.g. --stream naruto-shippuden-1x1 or -e <ep> --stream)")
     parser.add_argument("--crawl", "-c", type=str, help="Crawl series and pre-cache episodes")
     parser.add_argument("--max-episodes", type=int, default=None, help="Limit number of episodes to crawl")
     parser.add_argument("--refresh", action="store_true", help="Bypass local cache and re-fetch from site")
@@ -235,13 +286,25 @@ def main():
                 sys.exit(1)
             print_series_detail(detail, season=args.season, show_all=args.all, limit=args.limit)
 
-        elif args.episode:
-            with console.status(f"[bold bright_green]🚀 Resolving multi-audio streams & mirrors for '[bold white]{args.episode}[/bold white]'...[/bold bright_green]", spinner="arc"):
-                ep = scraper.get_episode_streams(args.episode, use_cache=not args.refresh)
+        elif args.stream is not None:
+            target_slug = args.stream if args.stream.strip() else (args.episode or "")
+            if not target_slug:
+                console.print("\n[red]❌ Please provide an episode slug to extract streams (e.g. --stream naruto-shippuden-1x1)[/red]\n")
+                sys.exit(1)
+            with console.status(f"[bold bright_green]⚡ Unpacking player embeds & extracting direct .m3u8 stream links for '[bold white]{target_slug}[/bold white]'...[/bold bright_green]", spinner="arc"):
+                ep = scraper.get_episode_streams(target_slug, use_cache=not args.refresh, resolve_direct=True)
             if not ep:
                 console.print("\n[red]❌ Could not retrieve episode streams.[/red]\n")
                 sys.exit(1)
-            print_episode_streams(ep)
+            print_episode_streams(ep, direct_resolved=True)
+
+        elif args.episode:
+            with console.status(f"[bold bright_green]🚀 Resolving episode mirrors for '[bold white]{args.episode}[/bold white]'...[/bold bright_green]", spinner="arc"):
+                ep = scraper.get_episode_streams(args.episode, use_cache=not args.refresh, resolve_direct=False)
+            if not ep:
+                console.print("\n[red]❌ Could not retrieve episode streams.[/red]\n")
+                sys.exit(1)
+            print_episode_streams(ep, direct_resolved=False)
 
         elif args.crawl:
             with console.status(f"[bold bright_yellow]⚡ Crawling series episodes for '[bold white]{args.crawl}[/bold white]'...[/bold bright_yellow]", spinner="bouncingBar"):
