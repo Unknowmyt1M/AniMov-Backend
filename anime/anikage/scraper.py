@@ -63,17 +63,36 @@ class AnikageScraper:
 
     def search(self, query: str, page: int = 1, limit: int = 20) -> List[AnikageSearchResult]:
         """Search anime by keyword."""
-        url = f"{API_BASE_URL}/browse"
+        cleaned_query = query.strip() if query else ""
+        if not cleaned_query:
+            return []
+
+        url = f"{API_BASE_URL}/search"
+        # Fetch up to required page boundary to support pagination cleanly
+        fetch_limit = max(limit * page, limit)
         params = {
-            "query": query,
-            "page": page,
-            "per_page": limit,
+            "q": cleaned_query,
+            "limit": fetch_limit,
         }
         resp = self.http.get(url, params=params)
-        data = resp.json()
+        try:
+            data = resp.json()
+        except Exception as e:
+            raise RuntimeError(f"AniKage returned malformed JSON response: {e}")
+
+        if not isinstance(data, dict):
+            raise RuntimeError(f"Unexpected response format from AniKage: {type(data)}")
 
         items = data.get("data", [])
-        return [self._parse_search_item(i) for i in items]
+        if not isinstance(items, list):
+            items = []
+
+        # Apply deterministic page slicing
+        start_idx = (page - 1) * limit
+        end_idx = start_idx + limit
+        paged_items = items[start_idx:end_idx]
+
+        return [self._parse_search_item(i) for i in paged_items if isinstance(i, dict)]
 
     def get_catalog(
         self,
@@ -111,8 +130,14 @@ class AnikageScraper:
                 return cached_detail
 
         url = f"{API_BASE_URL}/{slug}"
-        resp = self.http.get(url)
-        data = resp.json()
+        try:
+            resp = self.http.get(url)
+            data = resp.json()
+        except RuntimeError as e:
+            if "HTTP 404" in str(e):
+                logger.debug(f"Anikage anime '{slug}' not found: {e}")
+                return None
+            raise
 
         anime = data.get("anime", {})
         title_obj = anime.get("title", {})

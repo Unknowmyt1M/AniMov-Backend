@@ -124,17 +124,57 @@ class ToonstreamScraper:
             )
         return results
 
-    def get_detail(self, link_or_slug: str, include_episodes: bool = True) -> ToonstreamDetail:
+    def get_detail(
+        self,
+        link_or_slug: str,
+        media_type: Optional[str] = None,
+        include_episodes: bool = True,
+    ) -> ToonstreamDetail:
         """Fetch full series or movie metadata with all seasons and episodes."""
-        if link_or_slug.startswith("http"):
-            url = link_or_slug
-        elif link_or_slug.startswith("/"):
-            url = f"{self.http.base_url}{link_or_slug}"
-        else:
-            # Default to /series/<slug>
-            url = f"{self.http.base_url}/series/{link_or_slug}"
+        clean_input = str(link_or_slug).strip() if link_or_slug else ""
+        if not clean_input:
+            raise ValueError("Slug or URL cannot be empty")
 
-        resp = self.http.get(url)
+        if clean_input.startswith("http://") or clean_input.startswith("https://"):
+            url = clean_input
+        else:
+            path = clean_input.strip("/ ")
+            if path.startswith("movies/"):
+                url = f"{self.http.base_url}/{path}"
+            elif path.startswith("series/"):
+                url = f"{self.http.base_url}/{path}"
+            elif path.startswith("category/"):
+                url = f"{self.http.base_url}/{path}"
+            elif media_type == "movies":
+                url = f"{self.http.base_url}/movies/{path}"
+            elif media_type == "series":
+                url = f"{self.http.base_url}/series/{path}"
+            else:
+                url = f"{self.http.base_url}/series/{path}"
+
+        try:
+            resp = self.http.get(url)
+        except RuntimeError as e:
+            # If bare slug was tried as /series/ and received a post-type not-found or template failure (HTTP 404/500),
+            # try /movies/ as fallback. Do not retry on connection or timeout failures.
+            bare = clean_input.strip("/ ")
+            err_msg = str(e)
+            is_type_mismatch = "HTTP 404" in err_msg or "HTTP 500" in err_msg
+            if (
+                not clean_input.startswith("http")
+                and not any(bare.startswith(p) for p in ["movies/", "series/", "category/"])
+                and not media_type
+                and is_type_mismatch
+            ):
+                movie_url = f"{self.http.base_url}/movies/{bare}"
+                try:
+                    resp = self.http.get(movie_url)
+                    url = movie_url
+                except Exception:
+                    raise e
+            else:
+                raise e
+
         soup = BeautifulSoup(resp.text, "html.parser")
 
         title_el = soup.select_one("header.entry-header > h1, h1")

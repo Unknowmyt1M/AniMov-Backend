@@ -110,6 +110,9 @@ class KmmoviesScraper:
 
     def get_movie_detail(self, slug_or_url: str, use_cache: bool = True) -> Optional[MovieDetail]:
         """Fetch full details and download mirrors."""
+        if not slug_or_url or not str(slug_or_url).strip():
+            return None
+
         if slug_or_url.startswith("http://") or slug_or_url.startswith("https://"):
             page_url = slug_or_url
             slug = page_url.rstrip("/").split("/")[-1]
@@ -124,19 +127,35 @@ class KmmoviesScraper:
 
         resp = self.http.get(page_url)
         if resp.status_code != 200:
-            # Fallback: search and resolve slug
+            # Fallback: search and resolve slug only if a validated canonical match is found
             search_query = re.sub(r'movieact|movie|download|\b\d+p\b|webrip', ' ', slug, flags=re.I)
             search_query = " ".join(search_query.replace("-", " ").split()[:4])
             candidates = self.search(search_query) if search_query else []
             matched_url = None
-            slug_clean = slug.lower()
+            slug_clean = re.sub(r'[^a-z0-9]+', '-', slug.lower().strip('/')).strip('-')
+
+            def _strip_tags(s: str) -> str:
+                return re.sub(
+                    r'-(download|web-?dl|webrip|bluray|dual-audio|hindi|english|telugu|tamil|\d+p|\d+bit|sdr|hdr|x264|x265|hevc|movieact|movie)+',
+                    '',
+                    s,
+                    flags=re.I,
+                ).strip('-')
+
+            slug_stripped = _strip_tags(slug_clean)
+
             for cand in candidates:
-                cand_clean = cand.slug.lower()
-                if cand_clean == slug_clean or cand_clean in slug_clean or slug_clean in cand_clean:
+                cand_clean = re.sub(r'[^a-z0-9]+', '-', cand.slug.lower().strip('/')).strip('-')
+                cand_stripped = _strip_tags(cand_clean)
+
+                # Match if exact canonical, or exact match without quality/format tags, or strict prefix
+                if (
+                    cand_clean == slug_clean
+                    or (slug_stripped and cand_stripped == slug_stripped)
+                    or (len(slug_clean) >= 6 and cand_clean.startswith(slug_clean + "-"))
+                ):
                     matched_url = cand.link
                     break
-            if not matched_url and candidates:
-                matched_url = candidates[0].link
 
             if matched_url and matched_url != page_url:
                 page_url = matched_url

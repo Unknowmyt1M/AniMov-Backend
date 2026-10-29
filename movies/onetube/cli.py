@@ -123,6 +123,7 @@ def main():
     parser = argparse.ArgumentParser(description="1Tube Movie & TV Scraper CLI")
     parser.add_argument("--search", "-s", type=str, nargs="?", const="", default=None, help="Search for titles via 1Tube API")
     parser.add_argument("--detail", "-d", type=str, help="Get title details by TMDB ID or watch URL")
+    parser.add_argument("--type", "-t", type=str, choices=["movie", "tv"], default=None, help="Media type ('movie' or 'tv') for TMDB ID")
     parser.add_argument("--stream", type=str, help="Extract streaming mirrors for a TMDB ID")
     parser.add_argument("--all", "-a", action="store_true", help="Show all links without truncating")
     parser.add_argument("--limit", type=int, default=50, help="Display limit for streams (default: 50)")
@@ -164,14 +165,22 @@ def main():
 
         elif args.detail:
             with status_spinner(f"Fetching details for TMDB ID '{args.detail}'..."):
-                detail = scraper.get_movie_detail(args.detail, use_cache=use_cache)
+                try:
+                    detail = scraper.get_movie_detail(args.detail, media_type=args.type, use_cache=use_cache)
+                except ValueError as e:
+                    console.print(f"\n[red]❌ {e}[/red]\n[yellow]💡 Tip: Specify '--type tv' or '--type movie'[/yellow]\n")
+                    sys.exit(1)
             print_movie_details(detail, show_all=args.all, limit=args.limit)
             if not detail:
                 sys.exit(1)
 
         elif args.stream:
             with status_spinner(f"Extracting streams for TMDB ID '{args.stream}'..."):
-                detail = scraper.get_movie_detail(args.stream, use_cache=use_cache)
+                try:
+                    detail = scraper.get_movie_detail(args.stream, media_type=args.type, use_cache=use_cache)
+                except ValueError as e:
+                    console.print(f"\n[red]❌ {e}[/red]\n[yellow]💡 Tip: Specify '--type tv' or '--type movie'[/yellow]\n")
+                    sys.exit(1)
             if not detail or not detail.streams:
                 console.print("\n[yellow]⚠️  No streams found.[/yellow]\n")
                 sys.exit(1)

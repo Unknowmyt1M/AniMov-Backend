@@ -148,7 +148,8 @@ def main():
 
     # Detail
     detail_parser = subparsers.add_parser("detail", help="Get series or movie details")
-    detail_parser.add_argument("slug", help="Slug or URL of the title")
+    detail_parser.add_argument("slug", help="Slug, path (e.g. /movies/slug), or full URL of the title")
+    detail_parser.add_argument("--type", choices=["series", "movies"], default=None, help="Explicit media type (series or movies)")
     detail_parser.add_argument("--all", "-a", action="store_true", help="Show all episodes without truncating")
     detail_parser.add_argument("--limit", type=int, default=50, help="Episode table display limit (default: 50)")
 
@@ -178,7 +179,7 @@ def main():
 
         elif args.command == "detail":
             with status_spinner(f"Fetching details for '{args.slug}'..."):
-                detail = scraper.get_detail(args.slug)
+                detail = scraper.get_detail(args.slug, media_type=getattr(args, "type", None))
             print_details(detail, show_all=getattr(args, "all", False), limit=getattr(args, "limit", 50))
 
         elif args.command == "streams":
