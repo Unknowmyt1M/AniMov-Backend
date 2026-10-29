@@ -174,6 +174,24 @@ def show_anime_guide():
         'python -m anime.watchanimeworld.cli --search "One Piece"',
         'python -m anime.watchanimeworld.cli --detail "one-piece"',
     )
+    table.add_row(
+        "AnimeSuge",
+        "Fast Anime Streaming, Sub & Dub servers, batch crawling",
+        'python -m anime.animesuge.cli --search "Bleach"',
+        'python -m anime.animesuge.cli --episode "bleach-yaa9n" --ep 1',
+    )
+    table.add_row(
+        "Miruro",
+        "GraphQL API, high-res posters, format & score metrics",
+        'python -m anime.miruro.cli --search "Bleach"',
+        'python -m anime.miruro.cli --episode "_xmqpElBfc0TJw5QvjhmLekg22_fLvcv" --ep 1',
+    )
+    table.add_row(
+        "ReAnime",
+        "Fast streaming API, season metadata & episode lists",
+        'python -m anime.reanime.cli --search "Bleach"',
+        'python -m anime.reanime.cli --episode "bleach-p76y5k" --ep 1',
+    )
     console.print(table)
 
     examples = """[bold bright_cyan]💡 Practical Usage Examples for Anime:[/bold bright_cyan]
@@ -185,10 +203,18 @@ python -m anime.anikoto.cli --search "Naruto"
 python -m anime.anikoto.cli --detail "naruto-eybxz"
 python -m anime.anikoto.cli --episode "naruto-eybxz" --ep 500
 
-[bold yellow]# 3. Search Hindi dubbed anime on WatchAnimeWorld:[/bold yellow]
+[bold yellow]# 3. Search & stream on AnimeSuge:[/bold yellow]
+python -m anime.animesuge.cli --search "Bleach"
+python -m anime.animesuge.cli --episode "bleach-yaa9n" --ep 1
+
+[bold yellow]# 4. Search & stream on Miruro (GraphQL):[/bold yellow]
+python -m anime.miruro.cli --search "Attack on Titan"
+python -m anime.miruro.cli --info "_xmqpElBfc0TJw5QvjhmLekg22_fLvcv"
+
+[bold yellow]# 5. Search Hindi dubbed anime on WatchAnimeWorld:[/bold yellow]
 python -m anime.watchanimeworld.cli --search "Jujutsu Kaisen"
 
-[bold yellow]# 4. Search multi-audio dubs on AnimeSalt:[/bold yellow]
+[bold yellow]# 6. Search multi-audio dubs on AnimeSalt:[/bold yellow]
 python -m anime.animesalt.cli --search "Demon Slayer"
 """
     console.print(Panel(examples.strip(), border_style="magenta", box=box.ROUNDED, padding=(1, 2)))
@@ -239,6 +265,12 @@ def show_donghua_guide():
         "Cartoons & Donghua series catalog with ratings",
         'python -m donghua.toonstream.cli search "Ben 10"',
         'python -m donghua.toonstream.cli detail "ben-10-alien-force"',
+    )
+    table.add_row(
+        "AnimeXin",
+        "Catalog crawler, batch pipeline, SQLite caching",
+        'python -m donghua.Animexin.cli --search "Martial Master"',
+        'python -m donghua.Animexin.cli --url "https://animexin.dev/anime/<slug>/"',
     )
     console.print(table)
 

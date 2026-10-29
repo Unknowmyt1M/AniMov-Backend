@@ -17,8 +17,16 @@ import argparse
 import logging
 import sys
 
-from animexin_scraper.config import Config
-from animexin_scraper.pipeline import Pipeline
+try:
+    from .animexin_scraper.config import Config
+    from .animexin_scraper.pipeline import Pipeline
+except ImportError:
+    try:
+        from donghua.Animexin.animexin_scraper.config import Config
+        from donghua.Animexin.animexin_scraper.pipeline import Pipeline
+    except ImportError:
+        from animexin_scraper.config import Config
+        from animexin_scraper.pipeline import Pipeline
 
 
 def build_parser() -> argparse.ArgumentParser:
