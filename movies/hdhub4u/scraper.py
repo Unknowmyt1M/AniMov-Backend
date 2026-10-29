@@ -6,6 +6,7 @@ from typing import List, Optional
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse
 
+from common.ui import clean_text
 from .http_client import HDHub4uHttpClient
 from .config import SEARCH_API_URL
 from .models import (
@@ -75,7 +76,7 @@ class HDHub4uScraper:
         results: List[HDHub4uSearchResult] = []
         for hit in data.get("hits", []):
             doc = hit.get("document", {})
-            title = doc.get("post_title", "").strip()
+            title = clean_text(doc.get("post_title", ""))
             permalink = doc.get("permalink", "")
             thumb = doc.get("post_thumbnail")
 
@@ -131,7 +132,7 @@ class HDHub4uScraper:
             poster = img.get("src") or img.get("data-src") if img else None
 
             title_el = li.select_one("p, h2, h3, .entry-title")
-            title = title_el.text.strip() if title_el else a.get("title", "")
+            title = clean_text(title_el.text if title_el else a.get("title", ""))
             if not title:
                 continue
 
@@ -162,7 +163,7 @@ class HDHub4uScraper:
         soup = BeautifulSoup(resp.text, "html.parser")
 
         title_el = soup.select_one("h1.entry-title, h1")
-        title = title_el.text.strip() if title_el else link_or_slug
+        title = clean_text(title_el.text if title_el else link_or_slug)
 
         poster_el = soup.select_one("div.entry-content img, article img")
         poster = poster_el.get("src") if poster_el else None
@@ -181,9 +182,13 @@ class HDHub4uScraper:
             href = a["href"].strip()
             text = a.get_text(strip=True)
 
-            if not any(k in href for k in ["hubdrive", "hubcloud", "hubcdn", "pixeldrain", "file", "drive"]):
+            if not href.startswith("http"):
                 continue
-            if any(skip in href for skip in ["how-to", "disclaimer", "request", "telegram", "join"]):
+
+            if any(skip in href.lower() for skip in ["how-to", "disclaimer", "request", "telegram", "join", "hdhub4u."]):
+                continue
+
+            if not any(k in href.lower() for k in ["hubdrive", "hubcloud", "hubcdn", "pixeldrain", "driveleech", "gdflix", "file"]):
                 continue
 
             quality, size = self._extract_quality_size(text)

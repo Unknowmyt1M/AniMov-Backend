@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field
 
 class Hindilinks4uConfig(BaseModel):
     """Configuration settings."""
-    base_url: str = Field(default="https://hindilinks4u.church")
+    base_url: str = Field(default="https://hindilinks4u.today")
     timeout_seconds: int = Field(default=15)
     max_retries: int = Field(default=3)
     backoff_factor: float = Field(default=1.5)

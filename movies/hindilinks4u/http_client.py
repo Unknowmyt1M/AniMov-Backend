@@ -1,20 +1,44 @@
-"""HTTP Client for Hindilinks4u Scraper using curl_cffi with impersonation."""
+"""HTTP Client for Hindilinks4u Scraper using curl_cffi with impersonation and DoH resolution."""
 
 import time
+import json
 import logging
-from typing import Optional, Dict, Any
-from curl_cffi import requests
+import urllib.parse
+import urllib.request
+from typing import Optional, Dict, Any, List
+from curl_cffi import requests, CurlOpt
 
 from .config import config
 
 logger = logging.getLogger(__name__)
 
 
+def resolve_doh_ips(domain: str) -> List[str]:
+    """Resolve A records using Google DoH to bypass ISP DNS poisoning."""
+    try:
+        url = f"https://dns.google/resolve?name={domain}&type=A"
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+        with urllib.request.urlopen(req, timeout=5) as res:
+            data = json.loads(res.read())
+            return [a["data"] for a in data.get("Answer", []) if a.get("type") == 1]
+    except Exception as e:
+        logger.debug(f"DoH resolution failed for {domain}: {e}")
+        return []
+
+
 class Hindilinks4uHttpClient:
-    """Robust HTTP client with browser impersonation and retries."""
+    """Robust HTTP client with browser impersonation, DoH resolution, and retries."""
 
     def __init__(self):
-        self.session = requests.Session(impersonate=config.impersonate_profile)
+        parsed = urllib.parse.urlparse(config.base_url)
+        domain = parsed.netloc
+        ips = resolve_doh_ips(domain) or ["172.67.160.68", "104.21.9.157"]
+        resolves = [f"{domain}:443:{ip}" for ip in ips]
+
+        self.session = requests.Session(
+            impersonate=config.impersonate_profile,
+            curl_options={CurlOpt.RESOLVE: resolves} if resolves else {},
+        )
         self.headers = {
             "User-Agent": config.user_agent,
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",

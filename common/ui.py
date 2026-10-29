@@ -1,6 +1,7 @@
 """Shared Rich Terminal UI & Aesthetics for AniMov Providers."""
 
 import sys
+import re
 from typing import Optional, List, Tuple, Any
 from contextlib import contextmanager
 
@@ -33,6 +34,19 @@ BANNER_ART = r"""
 """
 
 
+def clean_text(val: Any) -> Any:
+    """Strip private-use area characters and normalize text safely."""
+    if val is None:
+        return ""
+    if not isinstance(val, str):
+        return val
+    # Strip unicode private use area characters (e.g. \ue000-\uf8ff)
+    val = re.sub(r"[\ue000-\uf8ff]", "", val)
+    # Normalize multiple whitespace/newlines if needed without breaking single newlines
+    val = val.replace("\r\n", "\n").replace("\r", "\n")
+    return val.strip()
+
+
 def print_banner(service_name: str, subtitle: str = "High-Speed Anime & Cinema Engine"):
     """Print the signature neon gradient AniMov banner."""
     logo = Text(BANNER_ART, style="bold bright_cyan")
@@ -48,14 +62,14 @@ def print_banner(service_name: str, subtitle: str = "High-Speed Anime & Cinema E
 
 def format_badge(text: str, bg_color: str = "bright_cyan", fg_color: str = "black") -> str:
     """Format a stylish pill badge."""
-    return f"[bold {fg_color} on {bg_color}] {text} [/]"
+    return f"[bold {fg_color} on {bg_color}] {clean_text(text)} [/]"
 
 
 def format_tags(items: List[str], color: str = "bright_magenta") -> str:
     """Format bullet-separated tags."""
     if not items:
         return "[dim]N/A[/dim]"
-    return " • ".join(f"[bold {color}]{it}[/]" for it in items)
+    return " • ".join(f"[bold {color}]{clean_text(it)}[/]" for it in items)
 
 
 def create_table(
@@ -64,8 +78,9 @@ def create_table(
     show_lines: bool = True,
     border_style: str = "bright_blue",
     header_style: str = "bold bright_magenta",
+    fold_overflow: bool = True,
 ) -> Table:
-    """Create a standardized beautiful rounded table."""
+    """Create a standardized beautiful rounded table with automatic wrapping and text sanitization."""
     table = Table(
         title=title,
         header_style=header_style,
@@ -74,7 +89,22 @@ def create_table(
         show_lines=show_lines,
     )
     for col_name, col_kwargs in columns:
-        table.add_column(col_name, **col_kwargs)
+        kwargs = dict(col_kwargs)
+        if fold_overflow:
+            if "overflow" not in kwargs:
+                kwargs["overflow"] = "fold"
+            if "no_wrap" not in kwargs:
+                kwargs["no_wrap"] = False
+        table.add_column(col_name, **kwargs)
+
+    # Monkey-patch add_row to automatically sanitize inputs and strip private-use unicode glyphs
+    orig_add_row = table.add_row
+
+    def safe_add_row(*args, **kwargs):
+        cleaned_args = [clean_text(a) if isinstance(a, str) else a for a in args]
+        return orig_add_row(*cleaned_args, **kwargs)
+
+    table.add_row = safe_add_row
     return table
 
 
@@ -85,14 +115,16 @@ def print_info_card(
     border_style: str = "bright_cyan",
 ):
     """Render a sleek media information card."""
+    title = clean_text(title)
     lines = []
     for label, val, color in fields:
         if val:
-            lines.append(f"[bold bright_white]{label:<18}[/bold bright_white] [{color}]{val}[/{color}]")
+            cleaned_val = clean_text(val)
+            lines.append(f"[bold bright_white]{label:<18}[/bold bright_white] [{color}]{cleaned_val}[/{color}]")
 
     if synopsis:
         lines.append("\n[bold bright_white]📖 Synopsis:[/bold bright_white]")
-        lines.append(f"[italic white]{synopsis}[/italic white]")
+        lines.append(f"[italic white]{clean_text(synopsis)}[/italic white]")
 
     card_content = "\n".join(lines)
     panel = Panel(
@@ -110,3 +142,4 @@ def status_spinner(message: str, spinner: str = "dots12"):
     """Animated spinner context manager."""
     with console.status(message, spinner=spinner):
         yield
+

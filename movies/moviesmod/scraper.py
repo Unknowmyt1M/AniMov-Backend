@@ -116,7 +116,9 @@ class MoviesmodScraper:
         if use_cache:
             cached = self.storage.get_movie(slug)
             if cached is not None:
-                return MovieDetail(**cached)
+                cached_dls = cached.get("downloads", [])
+                if cached_dls and (cached.get("rating") or cached.get("languages") or cached.get("genres") or cached.get("synopsis")):
+                    return MovieDetail(**cached)
 
         resp = self.http.get(page_url)
         if resp.status_code != 200:
@@ -140,7 +142,9 @@ class MoviesmodScraper:
                 if use_cache:
                     cached = self.storage.get_movie(slug)
                     if cached is not None:
-                        return MovieDetail(**cached)
+                        cached_dls = cached.get("downloads", [])
+                        if cached_dls and (cached.get("rating") or cached.get("languages") or cached.get("genres") or cached.get("synopsis")):
+                            return MovieDetail(**cached)
                 resp = self.http.get(page_url)
 
         if resp.status_code != 200:
@@ -176,65 +180,113 @@ class MoviesmodScraper:
         rating: Optional[str] = None
         duration: Optional[str] = None
 
-        for p in soup.find_all("p"):
+        # 1. Parse structured list items (li)
+        for li in soup.select(".entry-content li, article li"):
+            li_txt = li.get_text(strip=True)
+            if ":" in li_txt:
+                k, v = li_txt.split(":", 1)
+                k = k.strip().lower()
+                v = v.strip()
+                if not v:
+                    continue
+                if "language" in k or "audio" in k:
+                    clean_v = v.replace("[", "").replace("]", "").replace("{", "").replace("}", "")
+                    for part in re.split(r"[,/|–-]", clean_v):
+                        clean_part = part.strip()
+                        if clean_part and clean_part not in languages:
+                            languages.append(clean_part)
+                elif "genre" in k:
+                    genres = [g.strip() for g in re.split(r"[,/|]", v) if g.strip()]
+                elif "year" in k:
+                    m = re.search(r"\b(19\d{2}|20\d{2})\b", v)
+                    if m and not year:
+                        year = m.group(1)
+                elif "rating" in k or "imdb" in k:
+                    r_match = re.search(r"(\d+(?:\.\d+)?)\s*(?:/\s*10)?", v)
+                    if r_match and not rating:
+                        rating = f"{r_match.group(1)}/10"
+                elif "duration" in k or "time" in k:
+                    duration = v
+
+        # 2. Check paragraphs
+        for p in soup.select(".entry-content p, article p"):
             p_text = p.get_text(strip=True)
-            if "Audio:" in p_text or "Language:" in p_text:
-                for part in re.split(r"[:,-]", p_text):
-                    if any(lang in part.lower() for lang in ["hindi", "english", "tamil", "telugu", "dual", "multi"]):
-                        languages.append(part.strip())
-            elif "Genre:" in p_text or "Genres:" in p_text:
-                raw_g = re.sub(r"Genre(s)?:\s*", "", p_text)
-                genres = [g.strip() for g in raw_g.split(",") if g.strip()]
-            elif "IMDb Rating:" in p_text or "Rating:" in p_text:
-                r_match = re.search(r"(\d+(\.\d+)?\s*/\s*10)", p_text)
+            if not languages and ("audio:" in p_text.lower() or "language:" in p_text.lower()):
+                clean_v = p_text.split(":", 1)[-1].replace("[", "").replace("]", "").replace("{", "").replace("}", "")
+                for part in re.split(r"[,/|–-]", clean_v):
+                    clean_part = part.strip()
+                    if clean_part and clean_part not in languages:
+                        languages.append(clean_part)
+            if not genres and "genre" in p_text.lower():
+                raw_g = p_text.split(":", 1)[-1]
+                genres = [g.strip() for g in re.split(r"[,/|]", raw_g) if g.strip()]
+            if not rating and "imdb" in p_text.lower():
+                r_match = re.search(r"(\d+(?:\.\d+)?\s*/\s*10)", p_text)
                 if r_match:
                     rating = r_match.group(1)
-            elif "Storyline" in p_text or "Synopsis" in p_text:
-                synopsis = p_text.split(":")[-1].strip()
+            if not synopsis and any(k in p_text.lower() for k in ["storyline", "synopsis"]):
+                synopsis = p_text.split(":", 1)[-1].strip()
+
+        # Fallback for IMDb rating from anchor
+        if not rating:
+            imdb_link = soup.select_one('a[href*="imdb.com/title/"]')
+            if imdb_link:
+                m = re.search(r"(\d+(?:\.\d+)?)\s*/\s*10", imdb_link.get_text())
+                if m:
+                    rating = f"{m.group(1)}/10"
+
+        # Fallback synopsis: first substantial paragraph
+        if not synopsis:
+            for p in soup.select(".entry-content p"):
+                t = p.get_text(strip=True)
+                if len(t) > 60 and not any(k in t.lower() for k in ["download", "platform", "website", "join", "telegram", "screen"]):
+                    synopsis = t
+                    break
 
         # Downloads extraction
         downloads: List[DownloadSource] = []
         seen_urls = set()
+        GATEWAY_PATTERNS = ["modpro.", "archives", "episodes", "drive", "fast", "download", "hubcloud", "linksmod"]
 
-        for a in soup.find_all("a", href=True):
-            href = a["href"]
-            if href in seen_urls:
+        for a in soup.select(".entry-content a[href], article a[href]"):
+            href = a["href"].strip()
+            if not href.startswith("http") or href in seen_urls:
                 continue
 
-            if not href.startswith("http"):
-                continue
-            if "moviesmod" in href or any(skip in href for skip in ["/category/", "/movies-by-", "/page/", "/tag/", "how-to", "telegram", "facebook", "twitter", "#respond"]):
+            if "moviesmod" in href or any(skip in href.lower() for skip in ["/category/", "/movies-by-", "/page/", "/tag/", "how-to", "telegram", "facebook", "twitter", "#respond"]):
                 continue
 
-            if any(k in href for k in ["modpro.blog", "archives", "episodes", "drive", "fast", "download"]):
+            if any(k in href.lower() for k in GATEWAY_PATTERNS):
                 seen_urls.add(href)
                 btn_text = a.get_text(strip=True)
 
+                parent_p = a.find_parent("p")
+                prev_heading = a.find_previous(["h4", "h3", "h5", "p"])
+                if prev_heading == parent_p:
+                    prev_heading = prev_heading.find_previous(["h4", "h3", "h5", "p"])
+                heading_txt = prev_heading.get_text(strip=True) if prev_heading else ""
+                combined_txt = f"{heading_txt} {btn_text}".strip()
+
                 quality = "Direct"
                 for q in ["2160p", "4K", "1080p", "720p", "480p"]:
-                    if q.lower() in btn_text.lower():
+                    if q.lower() in combined_txt.lower():
                         quality = q
                         break
 
-                if quality == "Direct":
-                    parent = a.find_parent(["div", "p", "section"])
-                    if parent:
-                        p_txt = parent.get_text()
-                        for q in ["2160p", "4K", "1080p", "720p", "480p"]:
-                            if q in p_txt:
-                                quality = q
-                                break
-
-                # Size extraction
-                size_match = re.search(r"\[([\d\.]+\s*(?:MB|GB))\]|\b([\d\.]+\s*(?:MB|GB))\b", btn_text, re.I)
+                size_match = re.search(r"\[([\d\.]+\s*(?:MB|GB)(?:/E)?)\]|\b([\d\.]+\s*(?:MB|GB)(?:/E)?)\b", combined_txt, re.I)
                 size = (size_match.group(1) or size_match.group(2)) if size_match else None
+
+                label = heading_txt if heading_txt and "download" not in heading_txt.lower() else (btn_text or f"{quality} Download")
+                if not label or label.lower() in ["download links", "download"]:
+                    label = f"{quality} Download" + (f" [{size}]" if size else "")
+                label = re.sub(r"^(?:Download\s*|🔗\s*|🚀\s*)+", "", label).strip()
 
                 downloads.append(
                     DownloadSource(
                         quality=quality,
                         size=size,
                         url=href,
-                        label=btn_text or f"{quality} Download",
+                        label=label or f"{quality} Download",
                     )
                 )
 

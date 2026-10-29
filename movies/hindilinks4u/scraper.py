@@ -143,7 +143,10 @@ class Hindilinks4uScraper:
         if use_cache:
             cached = self.storage.get_movie(slug)
             if cached is not None:
-                return MovieDetail(**cached)
+                cached_title = cached.get("title", "")
+                cached_streams = cached.get("streams", [])
+                if cached_title and "you may also like" not in cached_title.lower() and cached_streams:
+                    return MovieDetail(**cached)
 
         resp = self.http.get(page_url)
         if resp.status_code != 200:
@@ -153,15 +156,24 @@ class Hindilinks4uScraper:
 
         # Title
         title = ""
-        h3_tag = soup.find("h3")
-        if h3_tag and h3_tag.get_text(strip=True):
-            title = h3_tag.get_text(strip=True)
+        h1_tag = soup.find("h1")
+        if h1_tag and h1_tag.get_text(strip=True) and "404" not in h1_tag.get_text():
+            title = h1_tag.get_text(strip=True)
+
         if not title:
-            h1_tag = soup.find("h1")
-            if h1_tag and h1_tag.get_text(strip=True) and "404" not in h1_tag.get_text():
-                title = h1_tag.get_text(strip=True)
+            meta_title = soup.find("meta", property="og:title")
+            if meta_title and meta_title.get("content"):
+                title = meta_title["content"].split("-")[0].strip()
+
         if not title and soup.title:
             title = soup.title.get_text(strip=True).split("-")[0].strip()
+
+        if not title:
+            for h in soup.find_all(["h2", "h3"]):
+                t = h.get_text(strip=True)
+                if t and not any(k in t.lower() for k in ["you may also like", "related", "comment", "leave a reply"]):
+                    title = t
+                    break
 
         # Poster
         poster = None
@@ -206,34 +218,60 @@ class Hindilinks4uScraper:
         # Streams extraction
         streams: List[StreamSource] = []
         trailer_url = None
+        seen_stream_urls = set()
 
-        # Look for iframe tags
+        def add_stream_source(url: str, label: str = ""):
+            if not url or url in seen_stream_urls:
+                return
+            if url.startswith("//"):
+                url = "https:" + url
+            if "youtube.com" in url or "youtu.be" in url:
+                nonlocal trailer_url
+                trailer_url = url
+                return
+
+            server_name = label or "Player"
+            url_lower = url.lower()
+            if "speedostream" in url_lower:
+                server_name = "SpeedoStream"
+            elif "playhub" in url_lower:
+                server_name = "PlayHub"
+            elif "dood" in url_lower:
+                server_name = "DoodStream"
+            elif "streamtape" in url_lower:
+                server_name = "Streamtape"
+            elif "mixdrop" in url_lower:
+                server_name = "MixDrop"
+            elif "streamwish" in url_lower:
+                server_name = "StreamWish"
+            elif "filelions" in url_lower:
+                server_name = "FileLions"
+
+            seen_stream_urls.add(url)
+            streams.append(
+                StreamSource(
+                    server_name=server_name,
+                    embed_url=url,
+                    source_type="iframe" if "iframe" in label.lower() else "direct",
+                    headers={"Referer": config.base_url + "/"},
+                )
+            )
+
+        # 1. Check iframe tags
         for iframe in soup.find_all("iframe"):
             src = iframe.get("src")
-            if not src:
+            if src:
+                add_stream_source(src, label="Iframe Player")
+
+        # 2. Check anchor tags with stream servers
+        STREAM_PATTERNS = ["streamtape.", "dood.", "doodstream.", "playhub.", "speedostream.", "mixdrop.", "streamwish.", "filelions.", "streamvid."]
+        for a in soup.select("a[href]"):
+            href = a["href"].strip()
+            if not href.startswith("http"):
                 continue
-            if src.startswith("//"):
-                src = "https:" + src
-            if "youtube.com" in src or "youtu.be" in src:
-                trailer_url = src
-            else:
-                server_name = "Player"
-                if "speedostream" in src:
-                    server_name = "SpeedoStream"
-                elif "playhub" in src:
-                    server_name = "PlayHub"
-                elif "dood" in src:
-                    server_name = "DoodStream"
-                elif "streamtape" in src:
-                    server_name = "Streamtape"
-                streams.append(
-                    StreamSource(
-                        server_name=server_name,
-                        embed_url=src,
-                        source_type="iframe",
-                        headers={"Referer": config.base_url + "/"},
-                    )
-                )
+            if any(k in href.lower() for k in STREAM_PATTERNS):
+                txt = a.get_text(strip=True)
+                add_stream_source(href, label=txt or "Stream Server")
 
         detail = MovieDetail(
             id=slug,

@@ -36,11 +36,11 @@ def print_search_results(results):
     table = create_table(
         title=f"✨ BollyFlix Search Results ({len(results)}) ✨",
         columns=[
-            ("Slug", {"style": "cyan"}),
-            ("Title", {"style": "bold bright_white"}),
-            ("Year", {"style": "bright_green", "justify": "center"}),
-            ("Type", {"style": "bright_yellow", "justify": "center"}),
-            ("Qualities", {"style": "bright_blue"}),
+            ("Slug", {"style": "cyan", "overflow": "fold", "no_wrap": False, "max_width": 38}),
+            ("Title", {"style": "bold bright_white", "overflow": "fold", "no_wrap": False}),
+            ("Year", {"style": "bright_green", "justify": "center", "no_wrap": True}),
+            ("Type", {"style": "bright_yellow", "justify": "center", "no_wrap": True}),
+            ("Qualities", {"style": "bright_blue", "overflow": "fold", "no_wrap": False}),
         ],
         border_style="bright_blue",
         header_style="bold bright_magenta",
@@ -96,10 +96,10 @@ def print_movie_details(detail, show_all: bool = False, limit: int = 50):
         dl_table = create_table(
             title=f"⬇️  Download & Stream Links ({len(detail.downloads)} Total{' - Showing First ' + str(limit) if not show_all and len(detail.downloads) > limit else ''})",
             columns=[
-                ("Quality", {"style": "bold bright_yellow", "justify": "center", "width": 10}),
-                ("Size", {"style": "bright_green", "justify": "center", "width": 12}),
-                ("Label", {"style": "bold bright_white"}),
-                ("URL", {"style": "underline cyan"}),
+                ("Quality", {"style": "bold bright_yellow", "justify": "center", "width": 10, "no_wrap": True}),
+                ("Size", {"style": "bright_green", "justify": "center", "width": 12, "no_wrap": True}),
+                ("Label", {"style": "bold bright_white", "overflow": "fold", "no_wrap": False}),
+                ("URL", {"style": "underline cyan", "overflow": "fold", "no_wrap": False}),
             ],
             border_style="bright_green",
             header_style="bold bright_green",

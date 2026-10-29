@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field
 
 class MoviesmodConfig(BaseModel):
     """Configuration settings."""
-    base_url: str = Field(default="https://moviesmod.ai.in")
+    base_url: str = Field(default="https://moviesmod.meme")
     timeout_seconds: int = Field(default=15)
     max_retries: int = Field(default=3)
     backoff_factor: float = Field(default=1.5)
